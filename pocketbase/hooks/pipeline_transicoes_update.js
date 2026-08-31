@@ -1,27 +1,33 @@
 // pocketbase/hooks/pipeline_transicoes_update.js
 // F1-T04 — Validacao de UPDATE/transicoes no pipeline 'demandas' (request hook)
-onRecordUpdateRequest((e) => {
-  const body = e.requestInfo().body || {}
-  const estadoAtual = body.estado || ''
-  const responsavel = body.responsavel || ''
-  const proximaAcao = body.proxima_acao || ''
-  const prazo = body.prazo || ''
-  const evidencia = body.evidencia || ''
-  const resultado = body.resultado || ''
-  const statusProposta = body.status_proposta || ''
-  const dataConquista = body.data_conquista || ''
-  const tipoConquista = body.tipo_conquista || ''
-  const contatoRef = body.contato_ref || ''
-  const ofertaServico = body.oferta_servico || ''
+// Mescla body com o registro atual para suportar PATCH parcial.
 
-  // Estado anterior (do registro existente)
-  let estadoAnterior = ''
+onRecordUpdateRequest((e) => {
+  let current = null
   try {
-    const current = $app.findRecordById('demandas', e.request.pathValue('id'))
-    estadoAnterior = current ? current.getString('estado') : ''
+    current = $app.findRecordById('demandas', e.request.pathValue('id'))
   } catch (_) {
-    estadoAnterior = ''
+    current = null
   }
+
+  const body = e.requestInfo().body || {}
+  const get = (field, cur) => {
+    if (typeof body[field] !== 'undefined') return body[field] || ''
+    return cur ? cur.getString(field) : ''
+  }
+
+  const estadoAtual = get('estado', current)
+  const estadoAnterior = current ? current.getString('estado') : ''
+  const responsavel = get('responsavel', current)
+  const proximaAcao = get('proxima_acao', current)
+  const prazo = get('prazo', current)
+  const evidencia = get('evidencia', current)
+  const resultado = get('resultado', current)
+  const statusProposta = get('status_proposta', current)
+  const dataConquista = get('data_conquista', current)
+  const tipoConquista = get('tipo_conquista', current)
+  const contatoRef = get('contato_ref', current)
+  const ofertaServico = get('oferta_servico', current)
 
   const TERMINAIS = ['ganho', 'perdido', 'sem_timing', 'desqualificado']
   const NAO_TERMINAIS_ACAO = [
