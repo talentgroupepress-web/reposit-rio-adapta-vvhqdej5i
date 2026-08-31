@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T17:40:56.626Z",
+  "generatedAt": "2026-08-31T21:27:55.195Z",
   "collections": [
     {
       "name": "users",
@@ -196,6 +196,40 @@
           "autodateTriggers": [
             "onCreate",
             "onUpdate"
+          ]
+        },
+        {
+          "name": "status_proposta",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "em_negociacao",
+            "aceita",
+            "recusada",
+            "sem_retorno"
+          ]
+        },
+        {
+          "name": "data_conversao_comercial",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_conquista",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tipo_conquista",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "aquisicao_nova",
+            "reativacao"
           ]
         }
       ],
