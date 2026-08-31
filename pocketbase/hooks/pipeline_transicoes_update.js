@@ -1,45 +1,31 @@
 // pocketbase/hooks/pipeline_transicoes_update.js
-// F1-T04 — Validacao de UPDATE/transicoes no pipeline 'demandas' (request hook)
-// Id via e.request.pathValue('id'); mescla body com registro atual (PATCH parcial).
+// F1-T04 — Validacao de transicoes no pipeline 'demandas' (model hook onRecordUpdate)
+// Usa e.oldRecord para o estado anterior (sem $app dentro de model hook).
+// Rejeicao via throw new Error -> HTTP 400 e nao persiste.
 
-onRecordUpdateRequest((e) => {
-  let current = null
-  try {
-    current = $app.findRecordById('demandas', e.request.pathValue('id'))
-  } catch (_) {
-    current = null
-  }
+onRecordUpdate((e) => {
+  const record = e.record
+  const old = e.oldRecord || null
 
-  const body = e.requestInfo().body || {}
-  const get = (field, cur) => {
-    if (typeof body[field] !== 'undefined') return body[field] || ''
-    return cur ? cur.getString(field) : ''
-  }
+  const estadoAtual = record.getString('estado')
+  const estadoAnterior = old ? old.getString('estado') : ''
 
-  const estadoAtual = get('estado', current)
-  const estadoAnterior = current ? current.getString('estado') : ''
-  const responsavel = get('responsavel', current)
-  const proximaAcao = get('proxima_acao', current)
-  const prazo = get('prazo', current)
-  const evidencia = get('evidencia', current)
-  const resultado = get('resultado', current)
-  const statusProposta = get('status_proposta', current)
-  const dataConquista = get('data_conquista', current)
-  const tipoConquista = get('tipo_conquista', current)
-  const contatoRef = get('contato_ref', current)
-  const ofertaServico = get('oferta_servico', current)
+  const responsavel = record.getString('responsavel')
+  const proximaAcao = record.getString('proxima_acao')
+  const prazo = record.getString('prazo')
+  const evidencia = record.getString('evidencia')
+  const resultado = record.getString('resultado')
+  const statusProposta = record.getString('status_proposta')
+  const dataConquista = record.getString('data_conquista')
+  const tipoConquista = record.getString('tipo_conquista')
+  const contatoRef = record.getString('contato_ref')
+  const ofertaServico = record.getString('oferta_servico')
 
   const TERMINAIS = ['ganho', 'perdido', 'sem_timing', 'desqualificado']
-  const NAO_TERMINAIS_ACAO = [
-    'prospect',
-    'lead_qualificado',
-    'oportunidade',
-    'proposta',
-    'vaga_aberta',
-  ]
+  const NAO_TERMINAIS = ['prospect', 'lead_qualificado', 'oportunidade', 'proposta', 'vaga_aberta']
 
-  // 1. Campos obrigatorios a partir de prospect (emenda E1 / CA-1-07)
-  if (estadoAtual === 'prospect' || NAO_TERMINAIS_ACAO.includes(estadoAtual)) {
+  // 1. A partir de prospect, campos obrigatorios (emenda E1 / CA-1-07)
+  if (NAO_TERMINAIS.includes(estadoAtual)) {
     const faltando = []
     if (!responsavel || responsavel.trim() === '') faltando.push('responsavel')
     if (!proximaAcao || proximaAcao.trim() === '') faltando.push('proxima_acao')
@@ -48,7 +34,7 @@ onRecordUpdateRequest((e) => {
       throw new Error(
         'registro em ' +
           estadoAtual +
-          ' exige responsavel, proxima_acao e prazo (CA-1-07/emenda E1): faltando ' +
+          ' exige responsavel, proxima_acao e prazo (emenda E1): faltando ' +
           faltando.join(','),
       )
     }
@@ -62,7 +48,7 @@ onRecordUpdateRequest((e) => {
       ofertaServico && ofertaServico.trim() !== '' && ofertaServico !== 'a identificar'
     if (!temEvidencia || !temContato || !temServico) {
       throw new Error(
-        'lead_qualificado exige evidencia de necessidade real, contato valido e servico definido (ICP sem campo tecnico nesta fase)',
+        'lead_qualificado exige evidencia de necessidade real, contato valido e servico definido',
       )
     }
   }
@@ -115,16 +101,12 @@ onRecordUpdateRequest((e) => {
     evidencia.trim() !== '' &&
     (!dataConquista || dataConquista.trim() === '')
   ) {
-    throw new Error(
-      'primeira vaga/demanda valida exige data_conquista preenchida (evento de conquista)',
-    )
+    throw new Error('primeira vaga/demanda valida exige data_conquista preenchida')
   }
 
   // 8. tipo_conquista nao inventado sem evidencia
   if (tipoConquista && tipoConquista.trim() !== '' && (!evidencia || evidencia.trim() === '')) {
-    throw new Error(
-      'tipo_conquista nao pode ser preenchido sem evidencia de historico (aquisicao_nova x reativacao)',
-    )
+    throw new Error('tipo_conquista nao pode ser preenchido sem evidencia de historico')
   }
 
   e.next()
