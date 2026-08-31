@@ -1,8 +1,8 @@
 // pocketbase/hooks/pipeline_transicoes.js
-// F1-T04 — Hook de validação das transições do pipeline 'demandas'
+// F1-T04 — Hook de validacao das transicoes do pipeline 'demandas'
 // Regras aprovadas pelo Champion (31/08/2026) + emenda E1 da SPEC-F1-002.
 // Rejeicao via throw new Error -> PocketBase devolve 400 e NAO persiste.
-// NOTA: $app.logger() NAO e usado dentro de onRecordValidate (causa 400 neste runtime).
+// NOTA: $app.logger() NAO e usado (causa 400 neste runtime); usa console.log.
 
 onRecordValidate((e) => {
   const record = e.record
@@ -49,16 +49,19 @@ onRecordValidate((e) => {
 
   const recusar = (motivo) => {
     console.log(
-      'transicao_recusada',
-      record.getString('record_id'),
-      estadoAnterior || 'novo',
-      estadoAtual,
-      motivo,
+      'transicao_recusada|' +
+        record.getString('record_id') +
+        '|' +
+        (estadoAnterior || 'novo') +
+        '|' +
+        estadoAtual +
+        '|' +
+        motivo,
     )
     throw new Error(motivo)
   }
 
-  // 1. Suspect pode existir sem responsavel/proxima_acao/prazo (emenda E1)
+  // 1. Suspect pode existir sem responsavel/proxima_acao/prazo (emenda E1). A partir de prospect, obrigatorio.
   if (NAO_TERMINAIS_ACAO.includes(estadoAtual)) {
     const faltando = []
     if (!responsavel || responsavel.trim() === '') faltando.push('responsavel')
@@ -66,7 +69,7 @@ onRecordValidate((e) => {
     if (!prazo || prazo.trim() === '') faltando.push('prazo')
     if (faltando.length > 0) {
       recusar(
-        'registro nao terminal a partir de prospect exige responsavel, proxima_acao e prazo (CA-1-07 / emenda E1): faltando ' +
+        'registro nao terminal a partir de prospect exige responsavel, proxima_acao e prazo (CA-1-07/emenda E1): faltando ' +
           faltando.join(','),
       )
     }
@@ -86,7 +89,7 @@ onRecordValidate((e) => {
     }
   }
 
-  // 3. lead_qualificado exige os criterios
+  // 3. lead_qualificado exige criterios (evidencia de necessidade, contato valido, servico definido)
   if (estadoAtual === 'lead_qualificado') {
     const temEvidencia = evidencia && evidencia.trim() !== ''
     const temContato = contatoRef && contatoRef.trim() !== ''
