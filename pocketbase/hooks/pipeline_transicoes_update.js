@@ -1,27 +1,23 @@
 // pocketbase/hooks/pipeline_transicoes_update.js
 // F1-T04 — Validacao de UPDATE/transicoes no pipeline 'demandas' (request hook)
-// Recupera o id diretamente do path da URL (pathValue nem sempre disponivel em goja).
+// Id via e.request.pathValue('id'); mescla body com registro atual (PATCH parcial).
 
 onRecordUpdateRequest((e) => {
-  const urlPath = e.request.url.path || ''
-  const parts = urlPath.split('/')
-  const id = parts[parts.length - 1]
-
   let current = null
   try {
-    current = $app.findRecordById('demandas', id)
+    current = $app.findRecordById('demandas', e.request.pathValue('id'))
   } catch (_) {
     current = null
   }
 
   const body = e.requestInfo().body || {}
   const get = (field, cur) => {
-    if (typeof body[field] !== 'undefined' && body[field] !== null) return String(body[field])
-    return cur ? String(cur.getString(field) || '') : ''
+    if (typeof body[field] !== 'undefined') return body[field] || ''
+    return cur ? cur.getString(field) : ''
   }
 
   const estadoAtual = get('estado', current)
-  const estadoAnterior = current ? String(current.getString('estado') || '') : ''
+  const estadoAnterior = current ? current.getString('estado') : ''
   const responsavel = get('responsavel', current)
   const proximaAcao = get('proxima_acao', current)
   const prazo = get('prazo', current)
@@ -42,10 +38,6 @@ onRecordUpdateRequest((e) => {
     'vaga_aberta',
   ]
 
-  const recusar = (motivo) => {
-    throw new Error(motivo)
-  }
-
   // 1. Campos obrigatorios a partir de prospect (emenda E1 / CA-1-07)
   if (estadoAtual === 'prospect' || NAO_TERMINAIS_ACAO.includes(estadoAtual)) {
     const faltando = []
@@ -53,7 +45,7 @@ onRecordUpdateRequest((e) => {
     if (!proximaAcao || proximaAcao.trim() === '') faltando.push('proxima_acao')
     if (!prazo || prazo.trim() === '') faltando.push('prazo')
     if (faltando.length > 0) {
-      recusar(
+      throw new Error(
         'registro em ' +
           estadoAtual +
           ' exige responsavel, proxima_acao e prazo (CA-1-07/emenda E1): faltando ' +
@@ -69,7 +61,7 @@ onRecordUpdateRequest((e) => {
     const temServico =
       ofertaServico && ofertaServico.trim() !== '' && ofertaServico !== 'a identificar'
     if (!temEvidencia || !temContato || !temServico) {
-      recusar(
+      throw new Error(
         'lead_qualificado exige evidencia de necessidade real, contato valido e servico definido (ICP sem campo tecnico nesta fase)',
       )
     }
@@ -78,24 +70,24 @@ onRecordUpdateRequest((e) => {
   // 3. proposta -> vaga_aberta exige proposta aceita
   if (estadoAnterior === 'proposta' && estadoAtual === 'vaga_aberta') {
     if (statusProposta !== 'aceita') {
-      recusar('proposta -> vaga_aberta exige status_proposta = aceita')
+      throw new Error('proposta -> vaga_aberta exige status_proposta = aceita')
     }
   }
 
   // 4. vaga_aberta -> ganho exige evidencia de fechamento (CA-1-10)
   if (estadoAnterior === 'vaga_aberta' && estadoAtual === 'ganho') {
     if (!evidencia || evidencia.trim() === '') {
-      recusar('vaga_aberta -> ganho exige evidencia de fechamento (CA-1-10)')
+      throw new Error('vaga_aberta -> ganho exige evidencia de fechamento (CA-1-10)')
     }
   }
 
   // 5. Terminais exigem motivo; ganho exige evidencia
   if (TERMINAIS.includes(estadoAtual)) {
     if (!resultado || resultado.trim() === '') {
-      recusar('estado terminal exige motivo (resultado) preenchido (RN-F1-009)')
+      throw new Error('estado terminal exige motivo (resultado) preenchido (RN-F1-009)')
     }
     if (estadoAtual === 'ganho' && (!evidencia || evidencia.trim() === '')) {
-      recusar('ganho exige evidencia de fechamento')
+      throw new Error('ganho exige evidencia de fechamento')
     }
   }
 
@@ -106,7 +98,7 @@ onRecordUpdateRequest((e) => {
     estadoAtual &&
     !TERMINAIS.includes(estadoAtual)
   ) {
-    recusar('nao e permitido retroceder de estado terminal')
+    throw new Error('nao e permitido retroceder de estado terminal')
   }
 
   // 7. data_conquista so em vaga_aberta/ganho; 1a demanda exige data_conquista
@@ -115,7 +107,7 @@ onRecordUpdateRequest((e) => {
     dataConquista.trim() !== '' &&
     !['vaga_aberta', 'ganho'].includes(estadoAtual)
   ) {
-    recusar('data_conquista so pode ser preenchida nos estados vaga_aberta ou ganho')
+    throw new Error('data_conquista so pode ser preenchida nos estados vaga_aberta ou ganho')
   }
   if (
     estadoAtual === 'vaga_aberta' &&
@@ -123,12 +115,14 @@ onRecordUpdateRequest((e) => {
     evidencia.trim() !== '' &&
     (!dataConquista || dataConquista.trim() === '')
   ) {
-    recusar('primeira vaga/demanda valida exige data_conquista preenchida (evento de conquista)')
+    throw new Error(
+      'primeira vaga/demanda valida exige data_conquista preenchida (evento de conquista)',
+    )
   }
 
   // 8. tipo_conquista nao inventado sem evidencia
   if (tipoConquista && tipoConquista.trim() !== '' && (!evidencia || evidencia.trim() === '')) {
-    recusar(
+    throw new Error(
       'tipo_conquista nao pode ser preenchido sem evidencia de historico (aquisicao_nova x reativacao)',
     )
   }
