@@ -40,6 +40,10 @@ onRecordUpdate((e) => {
   const tipoConquista = record.getString('tipo_conquista')
   const contatoRef = record.getString('contato_ref')
   const ofertaServico = record.getString('oferta_servico')
+  const qualidade = record.getString('qualidade')
+  const handoffStatus = record.getString('handoff_status')
+  const handoffStatusAnterior = oldVal('handoff_status')
+  const icpValidado = record.getString('icp_validado')
 
   const statusAnterior = oldVal('status_proposta')
   const dataConversao = record.getString('data_conversao_comercial')
@@ -94,6 +98,48 @@ onRecordUpdate((e) => {
     throw new Error(motivo)
   }
 
+  // F1-T05 — protecao do aceite que permitiu a entrada em Prospect
+  if (handoffStatusAnterior === 'aceito' && handoffStatus !== 'aceito') {
+    recusar('Nao e possivel alterar handoff_status=aceito apos o aceite do handoff.')
+  }
+
+  // F1-T05 — handoff enquanto o registro permanece Suspect
+  if (estadoAtual === 'suspect' && handoffStatus === 'pendente') {
+    if (!evidencia || evidencia.trim() === '') {
+      recusar('Handoff pendente exige evidencia da tentativa de distribuicao.')
+    }
+  }
+  if (estadoAtual === 'suspect' && handoffStatus === 'recusado') {
+    const faltandoHandoff = []
+    if (!resultado || resultado.trim() === '') faltandoHandoff.push('resultado')
+    if (!evidencia || evidencia.trim() === '') faltandoHandoff.push('evidencia')
+    if (!responsavel || responsavel.trim() === '') faltandoHandoff.push('responsavel')
+    if (qualidade !== 'pendente') faltandoHandoff.push('qualidade=pendente')
+    if (faltandoHandoff.length > 0) {
+      recusar(
+        'Handoff recusado exige resultado, evidencia, responsavel e qualidade=pendente. (faltando: ' +
+          faltandoHandoff.join(', ') +
+          ')',
+      )
+    }
+  }
+
+  // F1-T05 — retry exclusivamente manual e somente com nova evidencia
+  if (
+    estadoAnterior === 'suspect' &&
+    handoffStatusAnterior === 'recusado' &&
+    handoffStatus === 'pendente'
+  ) {
+    if (!evidencia || evidencia.trim() === '' || evidencia === evidenciaAnterior) {
+      recusar('Retry de handoff exige nova evidencia da nova tentativa.')
+    }
+  }
+
+  // F1-T05 — Suspect -> Prospect só após aceite do handoff
+  if (estadoAnterior === 'suspect' && estadoAtual === 'prospect' && handoffStatus !== 'aceito') {
+    recusar('Nao e possivel avancar para Prospect: handoff_status=aceito e obrigatorio.')
+  }
+
   // 1. A partir de prospect, campos obrigatorios (emenda E1 / CA-1-07)
   if (NAO_TERMINAIS.includes(estadoAtual)) {
     const faltando = []
@@ -108,6 +154,16 @@ onRecordUpdate((e) => {
           faltando.join(', ') +
           ')',
       )
+    }
+  }
+
+  // F1-T05 — ICP é decisão humana obrigatória no Prospect -> Lead Qualificado
+  if (estadoAnterior === 'prospect' && estadoAtual === 'lead_qualificado') {
+    if (icpValidado === '') {
+      recusar('ICP ainda não validado.')
+    }
+    if (icpValidado === 'nao') {
+      recusar('Empresa validada como fora do ICP.')
     }
   }
 

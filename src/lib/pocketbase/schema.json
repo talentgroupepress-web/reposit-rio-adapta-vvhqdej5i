@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T21:27:55.195Z",
+  "generatedAt": "2026-09-01T21:16:29.031Z",
   "collections": [
     {
       "name": "users",
@@ -29,14 +29,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -78,7 +83,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["inbound", "outbound", "desconhecido"]
+          "selectValues": [
+            "inbound",
+            "outbound",
+            "desconhecido"
+          ]
         },
         {
           "name": "canal",
@@ -163,28 +172,43 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["ok", "pendente", "desconhecido", "restrito"]
+          "selectValues": [
+            "ok",
+            "pendente",
+            "desconhecido",
+            "restrito"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "status_proposta",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["em_negociacao", "aceita", "recusada", "sem_retorno"]
+          "selectValues": [
+            "em_negociacao",
+            "aceita",
+            "recusada",
+            "sem_retorno"
+          ]
         },
         {
           "name": "data_conversao_comercial",
@@ -203,7 +227,31 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["aquisicao_nova", "reativacao"]
+          "selectValues": [
+            "aquisicao_nova",
+            "reativacao"
+          ]
+        },
+        {
+          "name": "handoff_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "pendente",
+            "aceito",
+            "recusado"
+          ]
+        },
+        {
+          "name": "icp_validado",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "sim",
+            "nao"
+          ]
         }
       ],
       "indexes": []
