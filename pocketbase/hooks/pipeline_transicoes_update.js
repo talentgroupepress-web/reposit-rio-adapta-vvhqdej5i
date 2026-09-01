@@ -5,6 +5,7 @@
 //   1) autopreenchimento de data_conversao_comercial no aceite (status_proposta -> aceita)
 //   2) preservacao da data original (nao sobrescreve em edicoes posteriores)
 //   3) motivo especifico de recusa observavel via $app.logger() (protegido por try/catch)
+//   4) vaga_aberta -> ganho exige NOVA evidencia de fechamento nesta atualizacao (old != new)
 
 onRecordUpdate((e) => {
   const record = e.record
@@ -17,6 +18,7 @@ onRecordUpdate((e) => {
   const proximaAcao = record.getString('proxima_acao')
   const prazo = record.getString('prazo')
   const evidencia = record.getString('evidencia')
+  const evidenciaAnterior = old ? old.getString('evidencia') : ''
   const resultado = record.getString('resultado')
   const statusProposta = record.getString('status_proposta')
   const dataConquista = record.getString('data_conquista')
@@ -34,7 +36,7 @@ onRecordUpdate((e) => {
   // ---------------------------------------------------------------
   // CORRECAO 1 + 2: data_conversao_comercial
   // ---------------------------------------------------------------
-  // 2. Preservar data original: nunca sobrescrever data ja existente no registro
+  // 2. Preservar data original: nunca sobrescrever data ja existente
   if (
     dataConversaoAnterior &&
     dataConversaoAnterior.trim() !== '' &&
@@ -107,9 +109,10 @@ onRecordUpdate((e) => {
     }
   }
 
-  // 4. vaga_aberta -> ganho exige evidencia de fechamento (CA-1-10)
+  // 4. vaga_aberta -> ganho exige NOVA evidencia de fechamento nesta atualizacao
   if (estadoAnterior === 'vaga_aberta' && estadoAtual === 'ganho') {
-    if (!evidencia || evidencia.trim() === '') {
+    const temNovaEvidencia = evidencia && evidencia.trim() !== '' && evidencia !== evidenciaAnterior
+    if (!temNovaEvidencia) {
       recusar(
         'Nao e possivel marcar como Ganho: falta evidencia de fechamento da vaga/demanda (CA-1-10).',
       )
