@@ -1,7 +1,10 @@
 // pocketbase/hooks/pipeline_transicoes_update.js
 // F1-T04 — Validacao de transicoes no pipeline 'demandas' (model hook onRecordUpdate)
-// Usa e.oldRecord para o estado anterior (sem $app dentro de model hook).
-// Rejeicao via throw new Error -> HTTP 400 e nao persiste.
+// Usa e.oldRecord para o estado anterior.
+// CORRECAO 31/08 (autorizacao Champion):
+//   1) autopreenchimento de data_conversao_comercial no aceite (status_proposta -> aceita)
+//   2) preservacao da data original (nao sobrescreve em edicoes posteriores)
+//   3) motivo especifico de recusa observavel via $app.logger() (protegido por try/catch)
 
 onRecordUpdate((e) => {
   const record = e.record
@@ -21,8 +24,51 @@ onRecordUpdate((e) => {
   const contatoRef = record.getString('contato_ref')
   const ofertaServico = record.getString('oferta_servico')
 
+  const statusAnterior = old ? old.getString('status_proposta') : ''
+  const dataConversao = record.getString('data_conversao_comercial')
+  const dataConversaoAnterior = old ? old.getString('data_conversao_comercial') : ''
+
   const TERMINAIS = ['ganho', 'perdido', 'sem_timing', 'desqualificado']
   const NAO_TERMINAIS = ['prospect', 'lead_qualificado', 'oportunidade', 'proposta', 'vaga_aberta']
+
+  // ---------------------------------------------------------------
+  // CORRECAO 1 + 2: data_conversao_comercial
+  // ---------------------------------------------------------------
+  // 2. Preservar data original: nunca sobrescrever data ja existente no registro
+  if (
+    dataConversaoAnterior &&
+    dataConversaoAnterior.trim() !== '' &&
+    dataConversao !== dataConversaoAnterior
+  ) {
+    record.set('data_conversao_comercial', dataConversaoAnterior)
+  }
+
+  // 1. Autopreenchimento: no primeiro momento em que status_proposta = aceita
+  if (
+    statusProposta === 'aceita' &&
+    statusAnterior !== 'aceita' &&
+    (!dataConversao || dataConversao.trim() === '')
+  ) {
+    record.set('data_conversao_comercial', new Date().toISOString())
+  }
+
+  // ---------------------------------------------------------------
+  // Helper de recusa: registra motivo observavel e rejeita o save
+  // ---------------------------------------------------------------
+  const recusar = (motivo) => {
+    try {
+      $app.logger().warn('transicao_recusada', {
+        collection: 'demandas',
+        record_id: record.getString('record_id'),
+        estado_anterior: estadoAnterior || 'novo',
+        estado_novo: estadoAtual,
+        motivo: motivo,
+      })
+    } catch (_) {
+      console.log('transicao_recusada|' + record.getString('record_id') + '|' + motivo)
+    }
+    throw new Error(motivo)
+  }
 
   // 1. A partir de prospect, campos obrigatorios (emenda E1 / CA-1-07)
   if (NAO_TERMINAIS.includes(estadoAtual)) {
@@ -31,11 +77,12 @@ onRecordUpdate((e) => {
     if (!proximaAcao || proximaAcao.trim() === '') faltando.push('proxima_acao')
     if (!prazo || prazo.trim() === '') faltando.push('prazo')
     if (faltando.length > 0) {
-      throw new Error(
-        'registro em ' +
+      recusar(
+        'Nao e possivel avancar para ' +
           estadoAtual +
-          ' exige responsavel, proxima_acao e prazo (emenda E1): faltando ' +
-          faltando.join(','),
+          ': responsavel, proxima_acao e prazo sao obrigatorios. (faltando: ' +
+          faltando.join(', ') +
+          ')',
       )
     }
   }
@@ -47,8 +94,8 @@ onRecordUpdate((e) => {
     const temServico =
       ofertaServico && ofertaServico.trim() !== '' && ofertaServico !== 'a identificar'
     if (!temEvidencia || !temContato || !temServico) {
-      throw new Error(
-        'lead_qualificado exige evidencia de necessidade real, contato valido e servico definido',
+      recusar(
+        'Nao e possivel avancar para Lead Qualificado: os criterios obrigatorios de qualificacao nao foram atendidos.',
       )
     }
   }
@@ -56,24 +103,28 @@ onRecordUpdate((e) => {
   // 3. proposta -> vaga_aberta exige proposta aceita
   if (estadoAnterior === 'proposta' && estadoAtual === 'vaga_aberta') {
     if (statusProposta !== 'aceita') {
-      throw new Error('proposta -> vaga_aberta exige status_proposta = aceita')
+      recusar('Nao e possivel avancar para Vaga Aberta: a proposta precisa estar aceita.')
     }
   }
 
   // 4. vaga_aberta -> ganho exige evidencia de fechamento (CA-1-10)
   if (estadoAnterior === 'vaga_aberta' && estadoAtual === 'ganho') {
     if (!evidencia || evidencia.trim() === '') {
-      throw new Error('vaga_aberta -> ganho exige evidencia de fechamento (CA-1-10)')
+      recusar(
+        'Nao e possivel marcar como Ganho: falta evidencia de fechamento da vaga/demanda (CA-1-10).',
+      )
     }
   }
 
   // 5. Terminais exigem motivo; ganho exige evidencia
   if (TERMINAIS.includes(estadoAtual)) {
     if (!resultado || resultado.trim() === '') {
-      throw new Error('estado terminal exige motivo (resultado) preenchido (RN-F1-009)')
+      recusar(
+        'Nao e possivel marcar como ' + estadoAtual + ': exige motivo (resultado) preenchido.',
+      )
     }
     if (estadoAtual === 'ganho' && (!evidencia || evidencia.trim() === '')) {
-      throw new Error('ganho exige evidencia de fechamento')
+      recusar('Nao e possivel marcar como Ganho: falta evidencia de fechamento.')
     }
   }
 
@@ -84,7 +135,7 @@ onRecordUpdate((e) => {
     estadoAtual &&
     !TERMINAIS.includes(estadoAtual)
   ) {
-    throw new Error('nao e permitido retroceder de estado terminal')
+    recusar('Nao e possivel retroceder de um estado terminal.')
   }
 
   // 7. data_conquista so em vaga_aberta/ganho; 1a demanda exige data_conquista
@@ -93,7 +144,7 @@ onRecordUpdate((e) => {
     dataConquista.trim() !== '' &&
     !['vaga_aberta', 'ganho'].includes(estadoAtual)
   ) {
-    throw new Error('data_conquista so pode ser preenchida nos estados vaga_aberta ou ganho')
+    recusar('data_conquista so pode ser preenchida nos estados vaga_aberta ou ganho.')
   }
   if (
     estadoAtual === 'vaga_aberta' &&
@@ -101,12 +152,14 @@ onRecordUpdate((e) => {
     evidencia.trim() !== '' &&
     (!dataConquista || dataConquista.trim() === '')
   ) {
-    throw new Error('primeira vaga/demanda valida exige data_conquista preenchida')
+    recusar('Primeira vaga/demanda valida exige data_conquista preenchida (evento de conquista).')
   }
 
   // 8. tipo_conquista nao inventado sem evidencia
   if (tipoConquista && tipoConquista.trim() !== '' && (!evidencia || evidencia.trim() === '')) {
-    throw new Error('tipo_conquista nao pode ser preenchido sem evidencia de historico')
+    recusar(
+      'tipo_conquista nao pode ser preenchido sem evidencia de historico (aquisicao_nova x reativacao).',
+    )
   }
 
   e.next()
