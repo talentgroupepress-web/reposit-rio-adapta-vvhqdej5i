@@ -1,24 +1,40 @@
 // pocketbase/hooks/pipeline_transicoes_update.js
 // F1-T04 — Validacao de transicoes no pipeline 'demandas' (model hook onRecordUpdate)
-// Usa e.oldRecord para o estado anterior.
+// Estado anterior via record.original() (API oficial do runtime — e.oldRecord nao disponivel).
 // CORRECAO 31/08 (autorizacao Champion):
 //   1) autopreenchimento de data_conversao_comercial no aceite (status_proposta -> aceita)
 //   2) preservacao da data original (nao sobrescreve em edicoes posteriores)
 //   3) motivo especifico de recusa observavel via $app.logger() (protegido por try/catch)
-//   4) vaga_aberta -> ganho exige NOVA evidencia de fechamento nesta atualizacao (old != new)
+//   4) vaga_aberta -> ganho exige NOVA evidencia de fechamento nesta atualizacao (orig != novo)
 
 onRecordUpdate((e) => {
   const record = e.record
-  const old = e.oldRecord || null
+
+  // Estado anterior via record.original() (antes do save)
+  let original = null
+  try {
+    original = record.original()
+  } catch (_) {
+    original = null
+  }
+  const oldVal = (field) => {
+    try {
+      if (!original) return ''
+      const v = original.getString ? original.getString(field) : ''
+      return v || ''
+    } catch (_) {
+      return ''
+    }
+  }
 
   const estadoAtual = record.getString('estado')
-  const estadoAnterior = old ? old.getString('estado') : ''
+  const estadoAnterior = oldVal('estado')
 
   const responsavel = record.getString('responsavel')
   const proximaAcao = record.getString('proxima_acao')
   const prazo = record.getString('prazo')
   const evidencia = record.getString('evidencia')
-  const evidenciaAnterior = old ? old.getString('evidencia') : ''
+  const evidenciaAnterior = oldVal('evidencia')
   const resultado = record.getString('resultado')
   const statusProposta = record.getString('status_proposta')
   const dataConquista = record.getString('data_conquista')
@@ -26,9 +42,9 @@ onRecordUpdate((e) => {
   const contatoRef = record.getString('contato_ref')
   const ofertaServico = record.getString('oferta_servico')
 
-  const statusAnterior = old ? old.getString('status_proposta') : ''
+  const statusAnterior = oldVal('status_proposta')
   const dataConversao = record.getString('data_conversao_comercial')
-  const dataConversaoAnterior = old ? old.getString('data_conversao_comercial') : ''
+  const dataConversaoAnterior = oldVal('data_conversao_comercial')
 
   const TERMINAIS = ['ganho', 'perdido', 'sem_timing', 'desqualificado']
   const NAO_TERMINAIS = ['prospect', 'lead_qualificado', 'oportunidade', 'proposta', 'vaga_aberta']
