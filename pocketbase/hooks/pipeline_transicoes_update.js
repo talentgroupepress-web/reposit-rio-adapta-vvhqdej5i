@@ -1,16 +1,15 @@
 // pocketbase/hooks/pipeline_transicoes_update.js
 // F1-T04 — Validacao de transicoes no pipeline 'demandas' (model hook onRecordUpdate)
-// Estado anterior via record.original() (API oficial do runtime — e.oldRecord nao disponivel).
+// Estado anterior via record.original() (API oficial do runtime).
 // CORRECAO 31/08 (autorizacao Champion):
 //   1) autopreenchimento de data_conversao_comercial no aceite (status_proposta -> aceita)
 //   2) preservacao da data original (nao sobrescreve em edicoes posteriores)
-//   3) motivo especifico de recusa observavel via $app.logger() (protegido por try/catch)
+//   3) motivo especifico de recusa observavel: BadRequestError com mensagem + log
 //   4) vaga_aberta -> ganho exige NOVA evidencia de fechamento nesta atualizacao (orig != novo)
 
 onRecordUpdate((e) => {
   const record = e.record
 
-  // Estado anterior via record.original() (antes do save)
   let original = null
   try {
     original = record.original()
@@ -71,7 +70,9 @@ onRecordUpdate((e) => {
   }
 
   // ---------------------------------------------------------------
-  // Helper de recusa: registra motivo observavel e rejeita o save
+  // Helper de recusa: motivo especifico identificavel
+  // BadRequestError (documentado) -> expoe a mensagem na resposta HTTP 400
+  // com fallback para Error e log via $app.logger() (protegido)
   // ---------------------------------------------------------------
   const recusar = (motivo) => {
     try {
@@ -83,7 +84,12 @@ onRecordUpdate((e) => {
         motivo: motivo,
       })
     } catch (_) {
-      console.log('transicao_recusada|' + record.getString('record_id') + '|' + motivo)
+      try {
+        console.log('transicao_recusada|' + record.getString('record_id') + '|' + motivo)
+      } catch (_2) {}
+    }
+    if (typeof BadRequestError !== 'undefined') {
+      throw new BadRequestError(motivo)
     }
     throw new Error(motivo)
   }
