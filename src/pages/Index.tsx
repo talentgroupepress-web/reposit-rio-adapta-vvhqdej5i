@@ -141,6 +141,8 @@ const Index = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [lastLoaded, setLastLoaded] = useState('')
+  const [sourceIds, setSourceIds] = useState<string[]>([])
+  const [reconciling, setReconciling] = useState(false)
 
   const loadRecords = async () => {
     setLoading(true)
@@ -161,6 +163,42 @@ const Index = () => {
   useEffect(() => {
     void loadRecords()
   }, [])
+
+  const buildSourceFilter = (current: Filters) => {
+    const escape = (value: string) => value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    const clauses: string[] = []
+    if (current.tipo_origem) clauses.push(`tipo_origem = "${escape(current.tipo_origem)}"`)
+    if (current.canal) clauses.push(`canal = "${escape(current.canal)}"`)
+    if (current.campanha) clauses.push(`campanha = "${escape(current.campanha)}"`)
+    if (current.oferta_servico) clauses.push(`oferta_servico = "${escape(current.oferta_servico)}"`)
+    if (current.responsavel) clauses.push(`responsavel = "${escape(current.responsavel)}"`)
+    if (current.estado) clauses.push(`estado = "${escape(current.estado)}"`)
+    if (current.data_inicio) clauses.push(`data >= "${current.data_inicio} 00:00:00.000Z"`)
+    if (current.data_fim) clauses.push(`data <= "${current.data_fim} 23:59:59.999Z"`)
+    return clauses.join(' && ')
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    const reconcile = async () => {
+      setReconciling(true)
+      try {
+        const result = await pb.collection('demandas').getFullList<Demanda>({
+          filter: buildSourceFilter(filters),
+          sort: 'record_id',
+        })
+        if (!cancelled) setSourceIds(result.map((record) => record.id))
+      } catch {
+        if (!cancelled) setSourceIds([])
+      } finally {
+        if (!cancelled) setReconciling(false)
+      }
+    }
+    void reconcile()
+    return () => {
+      cancelled = true
+    }
+  }, [filters])
 
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
@@ -212,6 +250,11 @@ const Index = () => {
   const unknownCount = filteredRecords.filter(
     (record) => record.tipo_origem === 'desconhecido' || !record.tipo_origem,
   ).length
+  const filteredIds = filteredRecords.map((record) => record.id).sort()
+  const reconciledIds = [...sourceIds].sort()
+  const reconciliationReady = !reconciling && filteredIds.length === reconciledIds.length
+  const reconciliationPassed =
+    reconciliationReady && filteredIds.every((id, index) => id === reconciledIds[index])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -465,9 +508,14 @@ const Index = () => {
         </Card>
 
         <p className="text-xs text-slate-500">
-          Reconciliação: registros filtrados {filteredRecords.length} · IDs exibidos{' '}
-          {filteredRecords.length} · diferença visual 0. Esta tela não cria, atualiza ou exclui
-          dados.
+          Reconciliação: painel {filteredRecords.length} registro(s) · fonte {sourceIds.length} ·
+          diferença {reconciliationReady ? filteredRecords.length - sourceIds.length : 'apurando'} ·{' '}
+          {reconciliationPassed
+            ? 'PASSOU — IDs coincidem'
+            : reconciling
+              ? 'consultando fonte'
+              : 'DIVERGÊNCIA — revisar'}{' '}
+          · esta tela não cria, atualiza ou exclui dados.
         </p>
       </main>
     </div>
