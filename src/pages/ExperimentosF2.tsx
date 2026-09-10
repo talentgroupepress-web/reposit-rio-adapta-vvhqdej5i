@@ -235,7 +235,13 @@ export function ExperimentoF2DetailPage() {
   const [history, setHistory] = useState(false)
   const historyRef = useRef<HTMLDivElement>(null)
   const [modal, setModal] = useState<null | {
-    type: 'transition' | 'version' | 'approval_publication' | 'approval_spend' | 'block' | 'duplicate'
+    type:
+      | 'transition'
+      | 'version'
+      | 'approval_publication'
+      | 'approval_spend'
+      | 'block'
+      | 'duplicate'
     destination?: EstadoBriefing
   }>(null)
   const [message, setMessage] = useState('')
@@ -387,12 +393,17 @@ export function ExperimentoF2DetailPage() {
                 Testar duplicidade
               </Button>
               {canApprove && (
-                <Button variant="outline" onClick={() => setModal({ type: 'approval_publication' })}>
-                  Aprovar publicação
-                </Button>
-                <Button variant="outline" onClick={() => setModal({ type: 'approval_spend' })}>
-                  Aprovar gasto
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setModal({ type: 'approval_publication' })}
+                  >
+                    Aprovar publicação
+                  </Button>
+                  <Button variant="outline" onClick={() => setModal({ type: 'approval_spend' })}>
+                    Aprovar gasto
+                  </Button>
+                </>
               )}
               {(TRANSITIONS[item.state] || []).map((destination) => (
                 <Button
@@ -527,14 +538,14 @@ export function ExperimentoF2DetailPage() {
             modal.type === 'version'
               ? 'Criar nova versão do briefing'
               : modal.type === 'approval_publication'
-  ? 'Aprovar publicação'
-  : modal.type === 'approval_spend'
-    ? 'Aprovar gasto'
-                : modal.type === 'block'
-                  ? 'Registrar bloqueio'
-                  : modal.type === 'duplicate'
-                    ? 'Testar duplicidade'
-                    : `Transição para ${modal.destination}`
+                ? 'Aprovar publicação'
+                : modal.type === 'approval_spend'
+                  ? 'Aprovar gasto'
+                  : modal.type === 'block'
+                    ? 'Registrar bloqueio'
+                    : modal.type === 'duplicate'
+                      ? 'Testar duplicidade'
+                      : `Transição para ${modal.destination}`
           }
           description="A ação exige motivo registrado no histórico."
           onConfirm={execute}
