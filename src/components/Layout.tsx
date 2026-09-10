@@ -7,6 +7,19 @@ import { Outlet } from 'react-router-dom'
 export default function Layout() {
   return (
     <main className="flex flex-col min-h-screen">
+      <header className="border-b bg-white px-6 py-3">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between text-sm">
+          <span className="font-semibold">Talent Group · Adapta</span>
+          <div className="flex gap-4">
+            <a className="text-slate-600 hover:text-slate-950" href="/">
+              Pipeline
+            </a>
+            <a className="text-slate-600 hover:text-slate-950" href="/experimentos">
+              Experimentos
+            </a>
+          </div>
+        </nav>
+      </header>
       <Outlet />
     </main>
   )
