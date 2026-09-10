@@ -27,6 +27,8 @@ import {
   registrarAprovacao,
   registrarBloqueio,
   resolverBloqueio,
+  solicitarAutorizacao,
+  tentativaDuplicidade,
   transicionarEstado,
   usuarioAtual,
   type AprovacaoF2,
@@ -47,7 +49,6 @@ const TRANSITIONS: Record<EstadoBriefing, EstadoBriefing[]> = {
   Rejeitado: ['Arquivado'],
   Arquivado: [],
 }
-
 function LoginCard({ onLogin }: { onLogin: () => void }) {
   const [error, setError] = useState('')
   const login = async () => {
@@ -134,7 +135,6 @@ function ReasonModal({
     </div>
   )
 }
-
 export function ExperimentosF2Page() {
   const [items, setItems] = useState<BriefingF2[]>([])
   const [error, setError] = useState('')
@@ -212,7 +212,8 @@ export function ExperimentosF2Page() {
                     <b>Versão:</b> {item.briefing_version} · <b>Sintético:</b> sim
                   </p>
                   <p>
-                    <b>Orçamento:</b> {formatarMoeda((item.budget as any)?.valor)}
+                    <b>Publicação:</b> {item.publication_status || 'não solicitado'} · <b>Gasto:</b>{' '}
+                    {item.spend_status || 'não solicitado'}
                   </p>
                 </CardContent>
               </Card>
@@ -223,7 +224,6 @@ export function ExperimentosF2Page() {
     </div>
   )
 }
-
 export function ExperimentoF2DetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -235,7 +235,7 @@ export function ExperimentoF2DetailPage() {
   const [history, setHistory] = useState(false)
   const historyRef = useRef<HTMLDivElement>(null)
   const [modal, setModal] = useState<null | {
-    type: 'transition' | 'version' | 'approval' | 'block'
+    type: 'transition' | 'version' | 'approval' | 'block' | 'duplicate'
     destination?: EstadoBriefing
   }>(null)
   const [message, setMessage] = useState('')
@@ -280,7 +280,7 @@ export function ExperimentoF2DetailPage() {
       if (destination === 'Bloqueado')
         await registrarBloqueio(item, {
           motivo: reason,
-          regra: 'Decisão 15 — bloqueios estruturados',
+          regra: 'Decisão 15',
           identificadoPor: user?.name || 'usuário sintético',
           correcao: 'A definir.',
         })
@@ -295,10 +295,10 @@ export function ExperimentoF2DetailPage() {
       if (modal.type === 'transition' && modal.destination)
         await transition(modal.destination, reason)
       if (modal.type === 'version') await criarNovaVersao(item, reason, {})
+      if (modal.type === 'duplicate') await tentativaDuplicidade(item)
       if (modal.type === 'approval') {
-        await registrarAprovacao(item, 'preparação', reason)
-        if (item.state === 'Em revisão')
-          await transicionarEstado(item, 'Aprovado para preparação', reason)
+        await registrarAprovacao(item, 'publicação', reason)
+        await load()
       }
       if (modal.type === 'block') {
         await registrarBloqueio(item, {
@@ -341,7 +341,52 @@ export function ExperimentoF2DetailPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Publicação">
+                <Badge>{item.publication_status || 'não solicitado'}</Badge>
+              </Field>
+              <Field label="Gasto">
+                <Badge>{item.spend_status || 'não solicitado'}</Badge>
+              </Field>
+              <Field label="Papel atual">
+                <TextValue value={user?.role} />
+              </Field>
+            </div>
             <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await solicitarAutorizacao(item, 'publicação')
+                    await load()
+                  } catch (e: any) {
+                    setMessage(e?.message || 'Solicitação bloqueada.')
+                  }
+                }}
+              >
+                Solicitar publicação
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await solicitarAutorizacao(item, 'gasto')
+                    await load()
+                  } catch (e: any) {
+                    setMessage(e?.message || 'Solicitação bloqueada.')
+                  }
+                }}
+              >
+                Solicitar gasto
+              </Button>
+              <Button variant="outline" onClick={() => setModal({ type: 'duplicate' })}>
+                Testar duplicidade
+              </Button>
+              {canApprove && (
+                <Button variant="outline" onClick={() => setModal({ type: 'approval' })}>
+                  Aprovar publicação
+                </Button>
+              )}
               {(TRANSITIONS[item.state] || []).map((destination) => (
                 <Button
                   key={destination}
@@ -361,11 +406,6 @@ export function ExperimentoF2DetailPage() {
               <Button variant="outline" onClick={() => setModal({ type: 'version' })}>
                 Nova versão ({proximaVersao(item.briefing_version)})
               </Button>
-              {canApprove && (
-                <Button variant="outline" onClick={() => setModal({ type: 'approval' })}>
-                  Aprovar preparação
-                </Button>
-              )}
               <Button variant="outline" onClick={() => setModal({ type: 'block' })}>
                 Registrar bloqueio
               </Button>
@@ -386,7 +426,7 @@ export function ExperimentoF2DetailPage() {
               </Button>
             </div>
             <Separator />
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <Field label="Serviço">
                 <TextValue value={item.service} />
               </Field>
@@ -396,8 +436,6 @@ export function ExperimentoF2DetailPage() {
               <Field label="Canal">
                 <TextValue value={item.channel} />
               </Field>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
               <Field label="Hipótese — Se">
                 <TextValue value={h.se} />
               </Field>
@@ -406,12 +444,6 @@ export function ExperimentoF2DetailPage() {
               </Field>
               <Field label="Hipótese — Então">
                 <TextValue value={h.entao} />
-              </Field>
-              <Field label="Hipótese — Porque">
-                <TextValue value={h.porque} />
-              </Field>
-              <Field label="Mediremos por">
-                <JsonList value={h.mediremos_por} />
               </Field>
               <Field label="Público — papel">
                 <TextValue value={a.papel} />
@@ -488,10 +520,12 @@ export function ExperimentoF2DetailPage() {
             modal.type === 'version'
               ? 'Criar nova versão do briefing'
               : modal.type === 'approval'
-                ? 'Aprovar preparação'
+                ? 'Aprovar publicação'
                 : modal.type === 'block'
                   ? 'Registrar bloqueio'
-                  : `Transição para ${modal.destination}`
+                  : modal.type === 'duplicate'
+                    ? 'Testar duplicidade'
+                    : `Transição para ${modal.destination}`
           }
           description="A ação exige motivo registrado no histórico."
           onConfirm={execute}
