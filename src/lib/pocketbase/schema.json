@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T15:09:00.328Z",
+  "generatedAt": "2026-09-10T15:10:24.976Z",
   "collections": [
     {
       "name": "users",
@@ -41,6 +41,17 @@
           "autodateTriggers": [
             "onCreate",
             "onUpdate"
+          ]
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "operador",
+            "champion",
+            "delegado_f2"
           ]
         }
       ],
@@ -613,9 +624,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "create": "@request.auth.id != '' && (@request.auth.role = 'champion' || @request.auth.role = 'delegado_f2')",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'champion' || @request.auth.role = 'delegado_f2')",
+        "delete": "@request.auth.id != '' && (@request.auth.role = 'champion' || @request.auth.role = 'delegado_f2')"
       },
       "fields": [
         {
@@ -714,9 +725,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "create": "@request.auth.id != '' && (@request.auth.role = 'champion' || @request.auth.role = 'delegado_f2')",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'champion' || @request.auth.role = 'delegado_f2')",
+        "delete": "@request.auth.id != '' && (@request.auth.role = 'champion' || @request.auth.role = 'delegado_f2')"
       },
       "fields": [
         {
