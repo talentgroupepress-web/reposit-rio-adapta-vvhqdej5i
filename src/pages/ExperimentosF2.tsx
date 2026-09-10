@@ -36,7 +36,7 @@ import {
 } from '@/services/experimentosF2'
 
 const USUARIO_SINTETICO = {
-  email: 'humano-sintetico-briefing-01@f2.invalid',
+  email: 'humano-sintetico-aprovador-01@f2.invalid',
   password: 'F2-Sintetico-2026!',
 }
 
