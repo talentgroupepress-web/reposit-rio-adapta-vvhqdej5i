@@ -159,10 +159,26 @@ export function ExperimentosF2Page() {
   const [items, setItems] = useState<BriefingF2[]>([])
   const [error, setError] = useState('')
   const [, force] = useState(0)
-  const load = () =>
-    listarBriefings()
-      .then(setItems)
-      .catch((e) => setError(e?.message || 'Não foi possível carregar os briefings.'))
+  const load = async () => {
+    setError('')
+    for (let tentativa = 0; tentativa < 2; tentativa += 1) {
+      try {
+        const briefings = await listarBriefings()
+        setItems(briefings)
+        return
+      } catch (e: any) {
+        const status = e?.status ?? e?.response?.status
+        if (status === 401) {
+          pb.authStore.clear()
+          setError('Sua sessão expirou. Entre novamente para carregar os briefings.')
+          force((x) => x + 1)
+          return
+        }
+        if (tentativa === 0) continue
+        setError('Falha temporária de comunicação. Tente atualizar novamente.')
+      }
+    }
+  }
   useEffect(() => {
     if (pb.authStore.isValid) void load()
   }, [])
