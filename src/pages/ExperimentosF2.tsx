@@ -614,19 +614,34 @@ export function ExperimentoF2DetailPage() {
                             Regra: {b.affected_rule} · Identificado por: {b.identified_by} ·
                             Correção: {b.correction_needed} · {formatarData(b.created)}
                           </span>
-                          {b.status === 'aberto' && (
+                          {b.status === 'aberto' && podeAprovar && (
                             <>
                               <br />
                               <Button
                                 className="mt-2"
                                 variant="outline"
                                 onClick={async () => {
-                                  await resolverBloqueio(b.id, 'resolvido')
-                                  await carregar()
+                                  try {
+                                    await resolverBloqueio(b.id, 'resolvido')
+                                    await carregar()
+                                  } catch (e: any) {
+                                    setMensagem(
+                                      e?.message || 'Não foi possível resolver o bloqueio.',
+                                    )
+                                  }
                                 }}
                               >
                                 Marcar como resolvido
                               </Button>
+                            </>
+                          )}
+                          {b.status === 'aberto' && !podeAprovar && (
+                            <>
+                              <br />
+                              <span className="text-xs text-slate-500">
+                                Resolução reservada ao Champion ou Delegado formal. Usuário atual:{' '}
+                                {rotuloPapel(usuario?.role)}.
+                              </span>
                             </>
                           )}
                         </li>
