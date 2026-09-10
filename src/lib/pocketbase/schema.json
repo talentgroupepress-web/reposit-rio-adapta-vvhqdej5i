@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T15:10:24.976Z",
+  "generatedAt": "2026-09-10T15:26:27.481Z",
   "collections": [
     {
       "name": "users",
@@ -425,6 +425,24 @@
             "onCreate",
             "onUpdate"
           ]
+        },
+        {
+          "name": "owner_label",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responsible_label",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "approver_label",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -516,6 +534,12 @@
             "onCreate",
             "onUpdate"
           ]
+        },
+        {
+          "name": "actor_label",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -612,6 +636,12 @@
             "onCreate",
             "onUpdate"
           ]
+        },
+        {
+          "name": "actor_label",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -713,6 +743,12 @@
             "onCreate",
             "onUpdate"
           ]
+        },
+        {
+          "name": "approver_label",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

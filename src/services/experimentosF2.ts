@@ -1,14 +1,5 @@
 import pb from '@/lib/pocketbase/client'
-
-export const F2_STATES = [
-  'Rascunho',
-  'Em revisão',
-  'Aprovado para preparação',
-  'Bloqueado',
-  'Rejeitado',
-  'Arquivado',
-] as const
-export type F2State = (typeof F2_STATES)[number]
+import { proximaVersao, type EstadoBriefing } from '@/lib/f2/regras'
 
 export type BriefingF2 = {
   id: string
@@ -18,7 +9,7 @@ export type BriefingF2 = {
   origin: string
   channel: string
   briefing_version: string
-  state: F2State
+  state: EstadoBriefing
   synthetic_only: boolean
   offer: Record<string, unknown>
   hypothesis: Record<string, unknown>
@@ -30,44 +21,179 @@ export type BriefingF2 = {
   owner_user: string
   briefing_responsible: string
   approver_user?: string
+  owner_label?: string
+  responsible_label?: string
+  approver_label?: string
   created: string
   updated: string
 }
 
-export async function listBriefings() {
+export type VersaoF2 = {
+  id: string
+  experiment_id: string
+  version: string
+  previous_version?: string
+  change_summary?: string
+  reason: string
+  approval_status: string
+  actor_label?: string
+  created: string
+}
+
+export type AprovacaoF2 = {
+  id: string
+  experiment_id: string
+  briefing_version: string
+  approver_label?: string
+  role: string
+  scope: string
+  remarks?: string
+  status: string
+  created: string
+}
+
+export type BloqueioF2 = {
+  id: string
+  experiment_id: string
+  briefing_version: string
+  reason: string
+  affected_rule: string
+  identified_by: string
+  correction_needed: string
+  status: string
+  created: string
+}
+
+export async function listarBriefings() {
   return pb.collection('experimentos_f2').getFullList<BriefingF2>({ sort: '-updated' })
 }
 
-export async function getBriefing(id: string) {
+export async function obterBriefing(id: string) {
   return pb.collection('experimentos_f2').getOne<BriefingF2>(id)
 }
 
-export function validateBriefing(data: Partial<BriefingF2>) {
-  const errors: string[] = []
-  if (!data.experiment_id) errors.push('ID do experimento é obrigatório.')
-  if (!data.title) errors.push('Título é obrigatório.')
-  if (!['R&S', 'TMO', 'R&S + TMO'].includes(data.service || '')) errors.push('Serviço inválido.')
-  if (!['inbound', 'outbound', 'não identificado'].includes(data.origin || ''))
-    errors.push('Origem inválida.')
-  if (!data.channel) errors.push('Canal é obrigatório.')
-  if (!data.hypothesis) errors.push('Hipótese é obrigatória.')
-  if (!data.audience) errors.push('Público/ICP é obrigatório.')
-  if (!data.execution_window) errors.push('Janela de execução prevista é obrigatória.')
-  if (!data.analysis_period) errors.push('Período de análise previsto é obrigatório.')
-  if (!data.budget) errors.push('Orçamento previsto é obrigatório.')
-  if (!data.criteria) errors.push('Critérios são obrigatórios.')
-  if (data.synthetic_only !== true) errors.push('F2-T01 aceita somente massa sintética.')
-  return errors
+export async function listarVersoes(experimentId: string) {
+  return pb
+    .collection('experimento_versoes_f2')
+    .getFullList<VersaoF2>({ filter: `experiment_id = "${experimentId}"`, sort: '-created' })
 }
 
-export function allowedTransition(from: F2State, to: F2State) {
-  const allowed: Record<F2State, F2State[]> = {
-    Rascunho: ['Em revisão', 'Rejeitado', 'Arquivado'],
-    'Em revisão': ['Aprovado para preparação', 'Bloqueado', 'Rejeitado', 'Arquivado'],
-    'Aprovado para preparação': ['Arquivado'],
-    Bloqueado: ['Em revisão', 'Arquivado'],
-    Rejeitado: ['Arquivado'],
-    Arquivado: [],
-  }
-  return allowed[from]?.includes(to) ?? false
+export async function listarAprovacoes(experimentId: string) {
+  return pb
+    .collection('aprovacoes_f2')
+    .getFullList<AprovacaoF2>({ filter: `experiment_id = "${experimentId}"`, sort: '-created' })
+}
+
+export async function listarBloqueios(experimentId: string) {
+  return pb
+    .collection('bloqueios_f2')
+    .getFullList<BloqueioF2>({ filter: `experiment_id = "${experimentId}"`, sort: '-created' })
+}
+
+export function usuarioAtual() {
+  return pb.authStore.model as
+    | (Record<string, unknown> & { id?: string; name?: string; role?: string })
+    | null
+}
+
+export async function transicionarEstado(
+  briefing: BriefingF2,
+  novoEstado: EstadoBriefing,
+  motivo: string,
+) {
+  if (!pb.authStore.isValid) throw new Error('É necessário estar autenticado.')
+  const atualizado = await pb.collection('experimentos_f2').update<BriefingF2>(briefing.id, {
+    state: novoEstado,
+  })
+  const usuario = usuarioAtual()
+  await pb.collection('experimento_versoes_f2').create({
+    experiment_id: briefing.experiment_id,
+    version: briefing.briefing_version,
+    previous_version: briefing.briefing_version,
+    change_summary: `Transição de estado: ${briefing.state} → ${novoEstado}`,
+    reason: motivo || 'Transição de estado registrada.',
+    snapshot: JSON.stringify(atualizado),
+    approval_status: 'não aprovada',
+    actor: usuario?.id,
+    actor_label: usuario?.name || 'usuário sintético',
+  })
+  return atualizado
+}
+
+export async function criarNovaVersao(
+  briefing: BriefingF2,
+  motivo: string,
+  alteracoes: Partial<BriefingF2>,
+) {
+  if (!pb.authStore.isValid) throw new Error('É necessário estar autenticado.')
+  const usuario = usuarioAtual()
+  const nova = proximaVersao(briefing.briefing_version)
+  const atualizado = await pb.collection('experimentos_f2').update<BriefingF2>(briefing.id, {
+    ...alteracoes,
+    briefing_version: nova,
+    state: 'Rascunho',
+  })
+  await pb.collection('experimento_versoes_f2').create({
+    experiment_id: briefing.experiment_id,
+    version: nova,
+    previous_version: briefing.briefing_version,
+    change_summary: `Nova versão do briefing (${briefing.briefing_version} → ${nova}).`,
+    reason: motivo || 'Alteração material registrada como nova versão.',
+    snapshot: JSON.stringify(atualizado),
+    approval_status: 'não aprovada',
+    actor: usuario?.id,
+    actor_label: usuario?.name || 'usuário sintético',
+  })
+  return atualizado
+}
+
+export async function registrarAprovacao(briefing: BriefingF2, escopo: string, ressalvas: string) {
+  const usuario = usuarioAtual()
+  if (!usuario?.id) throw new Error('É necessário estar autenticado.')
+  return pb.collection('aprovacoes_f2').create({
+    experiment_id: briefing.experiment_id,
+    briefing_version: briefing.briefing_version,
+    approver: usuario.id,
+    approver_label: usuario.name || 'aprovador sintético',
+    role: String(usuario.role || 'champion'),
+    scope: escopo,
+    remarks: ressalvas,
+    status: 'válida',
+  })
+}
+
+export async function registrarBloqueio(
+  briefing: BriefingF2,
+  dados: { motivo: string; regra: string; identificadoPor: string; correcao: string },
+) {
+  return pb.collection('bloqueios_f2').create({
+    experiment_id: briefing.experiment_id,
+    briefing_version: briefing.briefing_version,
+    reason: dados.motivo,
+    affected_rule: dados.regra,
+    identified_by: dados.identificadoPor,
+    correction_needed: dados.correcao,
+    status: 'aberto',
+  })
+}
+
+export async function resolverBloqueio(id: string, status: string) {
+  return pb.collection('bloqueios_f2').update(id, { status })
+}
+
+export async function criarCriativo(
+  briefing: BriefingF2,
+  dados: { tipo: string; conteudo: string; motivo: string },
+) {
+  const usuario = usuarioAtual()
+  return pb.collection('criativos_f2').create({
+    experiment_id: briefing.experiment_id,
+    version: 'v1',
+    creative_type: dados.tipo,
+    content: JSON.stringify({ descricao: dados.conteudo }),
+    reason: dados.motivo,
+    actor: usuario?.id,
+    actor_label: usuario?.name || 'usuário sintético',
+    synthetic_only: true,
+  })
 }
