@@ -90,6 +90,8 @@ export function validarBriefing(dados: {
   owner_user?: string
   briefing_responsible?: string
   synthetic_only?: boolean
+  publication_status?: string
+  spend_status?: string
 }) {
   const erros: string[] = []
   if (!dados.experiment_id?.trim()) erros.push('Identificador do experimento é obrigatório.')
@@ -123,7 +125,11 @@ export function validarBriefing(dados: {
 
   if (!dados.owner_user) erros.push('Dono do experimento (humano) é obrigatório.')
   if (!dados.briefing_responsible) erros.push('Responsável pelo briefing (humano) é obrigatório.')
-  if (dados.synthetic_only !== true) erros.push('A F2-T01 aceita somente massa sintética.')
+  if (dados.synthetic_only !== true) erros.push('A F2-T02 aceita somente massa sintética.')
+  if (dados.publication_status === 'aprovado' && !dados.briefing_responsible)
+    erros.push('Publicação aprovada exige responsável humano.')
+  if (dados.spend_status === 'aprovado' && !dados.briefing_responsible)
+    erros.push('Gasto aprovado exige responsável humano.')
 
   return erros
 }

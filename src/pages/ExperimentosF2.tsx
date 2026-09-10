@@ -64,7 +64,7 @@ function LoginCard({ onLogin }: { onLogin: () => void }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-slate-600">
-          Use somente o usuário sintético preparado para testar a F2-T01. Nenhum usuário real é
+          Use somente o usuário sintético preparado para testar a F2-T02. Nenhum usuário real é
           usado nesta prova.
         </p>
         <Button onClick={login} disabled={busy}>
@@ -85,14 +85,12 @@ function Linha({ titulo, children }: { titulo: string; children: React.ReactNode
     </div>
   )
 }
-
 function TextoOuVazio({ valor }: { valor: unknown }) {
   const texto = String(valor ?? '').trim()
   return <>{texto ? texto : '—'}</>
 }
-
 function ListaOuVazio({ valor }: { valor: unknown }) {
-  if (Array.isArray(valor) && valor.length > 0) {
+  if (Array.isArray(valor) && valor.length > 0)
     return (
       <ul className="list-disc pl-4">
         {valor.map((item, i) => (
@@ -100,7 +98,6 @@ function ListaOuVazio({ valor }: { valor: unknown }) {
         ))}
       </ul>
     )
-  }
   return <>—</>
 }
 
@@ -168,7 +165,7 @@ export function ExperimentosF2Page() {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
         <div className="mx-auto max-w-2xl space-y-6">
-          <h1 className="text-3xl font-bold">F2-T01 · Briefings de experimentos</h1>
+          <h1 className="text-3xl font-bold">F2-T02 · Controles de experimentos</h1>
           <LoginCard
             onLogin={() => {
               force((x) => x + 1)
@@ -186,7 +183,7 @@ export function ExperimentosF2Page() {
             <p className="text-sm font-medium text-slate-500">Talent Group · Fase 2</p>
             <h1 className="text-3xl font-bold tracking-tight">Briefings de experimentos</h1>
             <p className="text-slate-600">
-              Módulo operacional F2-T01 · dados sintéticos · sem execução externa
+              F2-T02 · validação, duplicidade e aprovações sintéticas
             </p>
           </div>
           <div className="flex gap-2">
@@ -218,10 +215,10 @@ export function ExperimentosF2Page() {
           <CardContent className="flex items-start gap-3 pt-6 text-emerald-900">
             <ShieldCheck className="mt-0.5 h-5 w-5" />
             <div>
-              <b>Proteção operacional</b>
+              <b>Sem execução externa</b>
               <p className="text-sm">
-                Este módulo não usa a collection demandas, não publica campanhas, não gasta
-                orçamento e não integra RD Station, 1CRM ou Meta.
+                Publicação e gasto são apenas controles internos sintéticos. Nenhuma campanha,
+                integração ou gasto real é executado.
               </p>
             </div>
           </CardContent>
@@ -244,12 +241,12 @@ export function ExperimentosF2Page() {
                     <Badge variant="secondary">{item.service}</Badge>
                   </div>
                   <p>
-                    <b>Briefing:</b> {item.briefing_version} · <b>Sintético:</b>{' '}
+                    <b>Versão:</b> {item.briefing_version} · <b>Sintético:</b>{' '}
                     {item.synthetic_only ? 'sim' : 'não'}
                   </p>
                   <p>
-                    <b>Orçamento previsto:</b>{' '}
-                    {formatarMoeda((item.budget as Record<string, unknown>)?.valor)}
+                    <b>Publicação:</b> {item.publication_status || 'não solicitado'} · <b>Gasto:</b>{' '}
+                    {item.spend_status || 'não solicitado'}
                   </p>
                   <p>
                     <b>Responsável:</b> {item.responsible_label || '—'}
@@ -259,13 +256,6 @@ export function ExperimentosF2Page() {
             </Link>
           ))}
         </div>
-        {!error && items.length === 0 && (
-          <Card>
-            <CardContent className="pt-6 text-slate-600">
-              Nenhum briefing cadastrado ainda.
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )
@@ -282,11 +272,10 @@ export function ExperimentoF2DetailPage() {
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
   const historicoRef = useRef<HTMLDivElement | null>(null)
   const [modal, setModal] = useState<null | {
-    tipo: 'transicao' | 'versao' | 'aprovacao' | 'bloqueio'
+    tipo: 'transicao' | 'versao' | 'aprovacao' | 'bloqueio' | 'publicacao' | 'gasto' | 'duplicidade'
     destino?: EstadoBriefing
   }>(null)
   const [mensagem, setMensagem] = useState('')
-
   const carregar = async () => {
     try {
       const b = await obterBriefing(id)
@@ -303,11 +292,9 @@ export function ExperimentoF2DetailPage() {
       setError(e?.message || 'Não foi possível carregar o briefing.')
     }
   }
-
   useEffect(() => {
     if (pb.authStore.isValid) void carregar()
   }, [id])
-
   if (!pb.authStore.isValid)
     return (
       <div className="p-6">
@@ -316,23 +303,19 @@ export function ExperimentoF2DetailPage() {
     )
   if (error) return <div className="p-6 text-red-700">{error}</div>
   if (!item) return <div className="p-6">Carregando briefing…</div>
-
   const usuario = usuarioAtual()
   const podeAprovar = papelPodeAprovar(usuario?.role)
+  const bloqueioAberto = bloqueios.find((b) => b.status === 'aberto')
+  const aprovacaoValida = aprovacoes.find(
+    (a) => a.status === 'válida' && a.briefing_version === item.briefing_version,
+  )
   const hipotese = (item.hypothesis || {}) as Record<string, unknown>
   const publico = (item.audience || {}) as Record<string, unknown>
   const oferta = (item.offer || {}) as Record<string, unknown>
   const janela = (item.execution_window || {}) as Record<string, unknown>
   const orcamento = (item.budget || {}) as Record<string, unknown>
   const criterios = (item.criteria || {}) as Record<string, unknown>
-  const aprovacaoValida = aprovacoes.find(
-    (a) => a.status === 'válida' && a.briefing_version === item.briefing_version,
-  )
-  const bloqueioAberto = bloqueios.find((b) => b.status === 'aberto')
-
   const executarTransicao = async (destino: EstadoBriefing, motivo: string) => {
-    if (!item) return
-    setMensagem('')
     try {
       await transicionarEstado(item, destino, motivo)
       await carregar()
@@ -340,29 +323,21 @@ export function ExperimentoF2DetailPage() {
       setMensagem(e?.message || 'A ação falhou.')
     }
   }
-
   const executar = async (motivo: string) => {
     if (!modal) return
-    setMensagem('')
     try {
       if (modal.tipo === 'transicao' && modal.destino) {
         await executarTransicao(modal.destino, motivo)
-        if (modal.destino === 'Bloqueado') {
+        if (modal.destino === 'Bloqueado')
           await registrarBloqueio(item, {
             motivo,
             regra: 'Decisão 15 — bloqueios estruturados',
             identificadoPor: usuario?.name || 'usuário sintético',
             correcao: 'A definir pelo responsável do briefing.',
           })
-        }
-      } else if (modal.tipo === 'versao') {
-        await criarNovaVersao(item, motivo, {})
-      } else if (modal.tipo === 'aprovacao') {
-        await registrarAprovacao(
-          item,
-          'Aprovação de preparação do briefing (F2-T01, massa sintética)',
-          motivo,
-        )
+      } else if (modal.tipo === 'versao') await criarNovaVersao(item, motivo, {})
+      else if (modal.tipo === 'aprovacao') {
+        await registrarAprovacao(item, 'preparação', motivo)
         if (item.state === 'Em revisão')
           await transicionarEstado(item, 'Aprovado para preparação', motivo)
       } else if (modal.tipo === 'bloqueio') {
@@ -373,6 +348,8 @@ export function ExperimentoF2DetailPage() {
           correcao: 'A definir pelo responsável do briefing.',
         })
         if (item.state !== 'Bloqueado') await transicionarEstado(item, 'Bloqueado', motivo)
+      } else if (modal.tipo === 'duplicidade') {
+        await tentativaDuplicidade(item)
       }
       setModal(null)
       await carregar()
@@ -381,7 +358,6 @@ export function ExperimentoF2DetailPage() {
       setModal(null)
     }
   }
-
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -407,19 +383,28 @@ export function ExperimentoF2DetailPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            {aprovacaoValida && (
-              <p className="text-sm text-emerald-800">
-                Aprovação válida para {item.briefing_version}:{' '}
-                {aprovacaoValida.approver_label || 'aprovador'} ({rotuloPapel(aprovacaoValida.role)}
-                ) em {formatarData(aprovacaoValida.created)}.
-              </p>
-            )}
-            {bloqueioAberto && (
-              <p className="text-sm text-red-800">
-                Bloqueio aberto: {bloqueioAberto.reason} · correção necessária:{' '}
-                {bloqueioAberto.correction_needed}
-              </p>
-            )}
+            <div className="grid gap-3 md:grid-cols-3">
+              <Linha titulo="Serviço">
+                <TextoOuVazio valor={item.service} />
+              </Linha>
+              <Linha titulo="Origem">
+                <TextoOuVazio valor={item.origin} />
+              </Linha>
+              <Linha titulo="Canal">
+                <TextoOuVazio valor={item.channel} />
+              </Linha>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <Linha titulo="Publicação">
+                <Badge>{item.publication_status || 'não solicitado'}</Badge>
+              </Linha>
+              <Linha titulo="Gasto">
+                <Badge>{item.spend_status || 'não solicitado'}</Badge>
+              </Linha>
+              <Linha titulo="Responsável">
+                <TextoOuVazio valor={item.responsible_label} />
+              </Linha>
+            </div>
             <div className="flex flex-wrap gap-2">
               {(TRANSICOES[item.state] || []).map((destino) => (
                 <Button
@@ -440,7 +425,40 @@ export function ExperimentoF2DetailPage() {
               <Button variant="outline" onClick={() => setModal({ tipo: 'versao' })}>
                 Nova versão ({proximaVersao(item.briefing_version)})
               </Button>
-              {podeAprovar && !aprovacaoValida && (
+              <Button variant="outline" onClick={() => setModal({ tipo: 'duplicidade' })}>
+                Testar duplicidade
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await pb
+                      .collection('experimentos_f2')
+                      .update(item.id, { publication_status: 'aguardando aprovação' })
+                    await carregar()
+                  } catch (e: any) {
+                    setMensagem(e?.message || 'Solicitação bloqueada.')
+                  }
+                }}
+              >
+                Solicitar publicação
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await pb
+                      .collection('experimentos_f2')
+                      .update(item.id, { spend_status: 'aguardando aprovação' })
+                    await carregar()
+                  } catch (e: any) {
+                    setMensagem(e?.message || 'Solicitação bloqueada.')
+                  }
+                }}
+              >
+                Solicitar gasto
+              </Button>
+              {podeAprovar && item.publication_status === 'aguardando aprovação' && (
                 <Button variant="outline" onClick={() => setModal({ tipo: 'aprovacao' })}>
                   Aprovar preparação
                 </Button>
@@ -453,7 +471,7 @@ export function ExperimentoF2DetailPage() {
                 onClick={() => {
                   const abrir = !mostrarHistorico
                   setMostrarHistorico(abrir)
-                  if (abrir) {
+                  if (abrir)
                     setTimeout(
                       () =>
                         historicoRef.current?.scrollIntoView({
@@ -462,35 +480,11 @@ export function ExperimentoF2DetailPage() {
                         }),
                       100,
                     )
-                  }
                 }}
               >
                 <History className="mr-2 h-4 w-4" />
                 Histórico
               </Button>
-            </div>
-            <Separator />
-            <div className="grid gap-3 md:grid-cols-3">
-              <Linha titulo="Serviço">
-                <TextoOuVazio valor={item.service} />
-              </Linha>
-              <Linha titulo="Origem">
-                <TextoOuVazio valor={item.origin} />
-              </Linha>
-              <Linha titulo="Canal">
-                <TextoOuVazio valor={item.channel} />
-              </Linha>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <Linha titulo="Dono do experimento">
-                <TextoOuVazio valor={item.owner_label} />
-              </Linha>
-              <Linha titulo="Responsável pelo briefing">
-                <TextoOuVazio valor={item.responsible_label} />
-              </Linha>
-              <Linha titulo="Aprovador da preparação">
-                <TextoOuVazio valor={item.approver_label || 'ainda não definido'} />
-              </Linha>
             </div>
             <Separator />
             <div className="grid gap-4 md:grid-cols-2">
@@ -509,9 +503,6 @@ export function ExperimentoF2DetailPage() {
               <Linha titulo="Hipótese — Mediremos por">
                 <ListaOuVazio valor={hipotese.mediremos_por} />
               </Linha>
-            </div>
-            <Separator />
-            <div className="grid gap-4 md:grid-cols-2">
               <Linha titulo="Público — papel">
                 <TextoOuVazio valor={publico.papel} />
               </Linha>
@@ -521,32 +512,24 @@ export function ExperimentoF2DetailPage() {
               <Linha titulo="Público — ICP">
                 <TextoOuVazio valor={publico.icp} />
               </Linha>
-              <Linha titulo="Público — separação">
-                <TextoOuVazio valor={publico.separacao} />
-              </Linha>
             </div>
             <Separator />
             <Linha titulo="Oferta">
               <TextoOuVazio valor={oferta.descricao} />
             </Linha>
             <div className="grid gap-4 md:grid-cols-2">
-              <Linha titulo="Janela de execução prevista">
+              <Linha titulo="Janela">
                 <p>
                   {formatarData(janela.inicio)} a {formatarData(janela.fim)}
                 </p>
               </Linha>
-              <Linha titulo="Período de análise previsto">
+              <Linha titulo="Período de análise">
                 <TextoOuVazio valor={item.analysis_period} />
               </Linha>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Linha titulo="Orçamento previsto">
-                <p>
-                  {formatarMoeda(orcamento.valor, String(orcamento.moeda || 'BRL'))} ·{' '}
-                  <TextoOuVazio valor={orcamento.origem} />
-                </p>
+              <Linha titulo="Orçamento">
+                <p>{formatarMoeda(orcamento.valor, String(orcamento.moeda || 'BRL'))}</p>
               </Linha>
-              <Linha titulo="Critérios de parada">
+              <Linha titulo="Critérios">
                 <ul className="list-disc pl-4">
                   {CRITERIOS_PARADA.map((c) => (
                     <li key={c}>
@@ -557,99 +540,48 @@ export function ExperimentoF2DetailPage() {
               </Linha>
             </div>
             {mostrarHistorico && (
-              <>
+              <div className="space-y-4" ref={historicoRef}>
                 <Separator />
-                <div className="space-y-4" ref={historicoRef}>
-                  <div>
-                    <h2 className="mb-2 text-lg font-semibold">Versões do briefing</h2>
-                    {versoes.length === 0 && (
-                      <p className="text-sm text-slate-600">Nenhuma versão registrada.</p>
-                    )}
-                    <ul className="space-y-2">
-                      {versoes.map((v) => (
-                        <li key={v.id} className="rounded-md border p-3 text-sm">
-                          <b>{v.version}</b> · {v.change_summary || '—'}
-                          <br />
-                          <span className="text-slate-600">
-                            Motivo: {v.reason} · Por: {v.actor_label || '—'} ·{' '}
-                            {formatarData(v.created)} · {v.approval_status}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h2 className="mb-2 text-lg font-semibold">Aprovações</h2>
-                    {aprovacoes.length === 0 && (
-                      <p className="text-sm text-slate-600">Nenhuma aprovação registrada.</p>
-                    )}
-                    <ul className="space-y-2">
-                      {aprovacoes.map((a) => (
-                        <li key={a.id} className="rounded-md border p-3 text-sm">
-                          <b>{a.briefing_version}</b> · {a.status} · {a.approver_label || '—'} (
-                          {rotuloPapel(a.role)}) · {formatarData(a.created)}
-                          <br />
-                          <span className="text-slate-600">Escopo: {a.scope}</span>
-                          {a.remarks && (
-                            <>
-                              <br />
-                              <span className="text-slate-600">Ressalvas: {a.remarks}</span>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h2 className="mb-2 text-lg font-semibold">Bloqueios</h2>
-                    {bloqueios.length === 0 && (
-                      <p className="text-sm text-slate-600">Nenhum bloqueio registrado.</p>
-                    )}
-                    <ul className="space-y-2">
-                      {bloqueios.map((b) => (
-                        <li key={b.id} className="rounded-md border p-3 text-sm">
-                          <b>{b.status}</b> · {b.reason}
-                          <br />
-                          <span className="text-slate-600">
-                            Regra: {b.affected_rule} · Identificado por: {b.identified_by} ·
-                            Correção: {b.correction_needed} · {formatarData(b.created)}
-                          </span>
-                          {b.status === 'aberto' && podeAprovar && (
-                            <>
-                              <br />
-                              <Button
-                                className="mt-2"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    await resolverBloqueio(b.id, 'resolvido')
-                                    await carregar()
-                                  } catch (e: any) {
-                                    setMensagem(
-                                      e?.message || 'Não foi possível resolver o bloqueio.',
-                                    )
-                                  }
-                                }}
-                              >
-                                Marcar como resolvido
-                              </Button>
-                            </>
-                          )}
-                          {b.status === 'aberto' && !podeAprovar && (
-                            <>
-                              <br />
-                              <span className="text-xs text-slate-500">
-                                Resolução reservada ao Champion ou Delegado formal. Usuário atual:{' '}
-                                {rotuloPapel(usuario?.role)}.
-                              </span>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                <div>
+                  <h2 className="mb-2 text-lg font-semibold">Versões do briefing</h2>
+                  {versoes.map((v) => (
+                    <div key={v.id} className="rounded-md border p-3 text-sm">
+                      <b>{v.version}</b> · {v.change_summary || '—'}
+                      <br />
+                      <span className="text-slate-600">
+                        Motivo: {v.reason} · Por: {v.actor_label || '—'} · {formatarData(v.created)}{' '}
+                        · {v.approval_status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              </>
+                <div>
+                  <h2 className="mb-2 text-lg font-semibold">Aprovações</h2>
+                  {aprovacoes.length === 0 && <p>Nenhuma aprovação registrada.</p>}
+                  {aprovacoes.map((a) => (
+                    <div key={a.id} className="rounded-md border p-3 text-sm">
+                      <b>{a.briefing_version}</b> · {a.status} · {a.approver_label || '—'} (
+                      {rotuloPapel(a.role)})<br />
+                      <span>
+                        Escopo: {a.scope} · {a.remarks || '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <h2 className="mb-2 text-lg font-semibold">Bloqueios</h2>
+                  {bloqueios.length === 0 && <p>Nenhum bloqueio registrado.</p>}
+                  {bloqueios.map((b) => (
+                    <div key={b.id} className="rounded-md border p-3 text-sm">
+                      <b>{b.status}</b> · {b.reason}
+                      <br />
+                      <span>
+                        Regra: {b.affected_rule} · Correção: {b.correction_needed}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -657,23 +589,17 @@ export function ExperimentoF2DetailPage() {
       {modal && (
         <ModalMotivo
           titulo={
-            modal.tipo === 'transicao'
-              ? `Transição para ${modal.destino}`
-              : modal.tipo === 'versao'
-                ? 'Criar nova versão do briefing'
-                : modal.tipo === 'aprovacao'
-                  ? 'Aprovar preparação'
-                  : 'Registrar bloqueio'
+            modal.tipo === 'versao'
+              ? 'Criar nova versão do briefing'
+              : modal.tipo === 'aprovacao'
+                ? 'Aprovação de publicação/gasto'
+                : modal.tipo === 'duplicidade'
+                  ? 'Testar duplicidade'
+                  : modal.tipo === 'bloqueio'
+                    ? 'Registrar bloqueio'
+                    : `Transição para ${modal.destino}`
           }
-          descricao={
-            modal.tipo === 'transicao'
-              ? 'A transição exige motivo registrado no histórico.'
-              : modal.tipo === 'versao'
-                ? `O briefing ${item.briefing_version} será preservado e uma nova versão (${proximaVersao(item.briefing_version)}) começará como Rascunho.`
-                : modal.tipo === 'aprovacao'
-                  ? 'A aprovação fica vinculada à versão exata do briefing.'
-                  : 'O bloqueio fica registrado e o briefing passa ao estado Bloqueado.'
-          }
+          descricao="A ação exige motivo registrado no histórico."
           onConfirm={executar}
           onCancel={() => setModal(null)}
         />

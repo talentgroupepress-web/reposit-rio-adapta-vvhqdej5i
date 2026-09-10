@@ -25,6 +25,8 @@ export type BriefingF2 = {
   responsible_label?: string
   approver_label?: string
   created: string
+  publication_status: string
+  spend_status: string
   updated: string
 }
 
@@ -51,6 +53,9 @@ export type AprovacaoF2 = {
   status: string
   created: string
 }
+
+export const APPROVAL_SCOPES = ['preparação', 'publicação', 'gasto', 'publicação_e_gasto'] as const
+export type ApprovalScope = (typeof APPROVAL_SCOPES)[number]
 
 export type BloqueioF2 = {
   id: string
@@ -147,7 +152,27 @@ export async function criarNovaVersao(
   return atualizado
 }
 
-export async function registrarAprovacao(briefing: BriefingF2, escopo: string, ressalvas: string) {
+export async function atualizarBriefing(briefing: BriefingF2, dados: Partial<BriefingF2>) {
+  if (briefing.state !== 'Rascunho')
+    throw new Error('Edição direta permitida somente em Rascunho. Crie uma nova versão.')
+  return pb.collection('experimentos_f2').update<BriefingF2>(briefing.id, dados)
+}
+
+export async function solicitarAutorizacao(briefing: BriefingF2, tipo: 'publicação' | 'gasto') {
+  const campo = tipo === 'publicação' ? 'publication_status' : 'spend_status'
+  const estadoAtual = tipo === 'publicação' ? briefing.publication_status : briefing.spend_status
+  if (estadoAtual === 'aprovado')
+    throw new Error(`A autorização de ${tipo} desta versão já está aprovada.`)
+  return pb
+    .collection('experimentos_f2')
+    .update<BriefingF2>(briefing.id, { [campo]: 'aguardando aprovação' })
+}
+
+export async function registrarAprovacao(
+  briefing: BriefingF2,
+  escopo: ApprovalScope,
+  ressalvas: string,
+) {
   const usuario = usuarioAtual()
   if (!usuario?.id) throw new Error('É necessário estar autenticado.')
   return pb.collection('aprovacoes_f2').create({
@@ -160,6 +185,85 @@ export async function registrarAprovacao(briefing: BriefingF2, escopo: string, r
     remarks: ressalvas,
     status: 'válida',
   })
+  const campos =
+    escopo === 'gasto'
+      ? ['spend_status']
+      : escopo === 'publicação'
+        ? ['publication_status']
+        : escopo === 'publicação_e_gasto'
+          ? ['publication_status', 'spend_status']
+          : []
+  if (campos.length) {
+    const update: Record<string, string> = {}
+    campos.forEach((campo) => {
+      update[campo] = 'aprovado'
+    })
+    await pb.collection('experimentos_f2').update(briefing.id, update)
+  }
+  return approval
+}
+
+export async function revogarAprovacao(
+  briefing: BriefingF2,
+  escopo: ApprovalScope,
+  motivo: string,
+) {
+  const aprovacoes = await listarAprovacoes(briefing.experiment_id)
+  const atual = aprovacoes.find(
+    (a) =>
+      a.briefing_version === briefing.briefing_version &&
+      a.scope === escopo &&
+      a.status === 'válida',
+  )
+  if (!atual) throw new Error('Não há aprovação válida deste escopo para revogar.')
+  await pb
+    .collection('aprovacoes_f2')
+    .update(atual.id, { status: 'revogada', decision_reason: motivo })
+  const campos =
+    escopo === 'gasto'
+      ? ['spend_status']
+      : escopo === 'publicação'
+        ? ['publication_status']
+        : escopo === 'publicação_e_gasto'
+          ? ['publication_status', 'spend_status']
+          : []
+  if (campos.length) {
+    const update: Record<string, string> = {}
+    campos.forEach((campo) => {
+      update[campo] = 'revogado'
+    })
+    await pb.collection('experimentos_f2').update(briefing.id, update)
+  }
+}
+
+export async function tentativaDuplicidade(briefing: BriefingF2) {
+  try {
+    await pb.collection('experimentos_f2').create({
+      experiment_id: briefing.experiment_id,
+      title: `${briefing.title} — duplicata RED`,
+      service: briefing.service,
+      origin: briefing.origin,
+      channel: briefing.channel,
+      briefing_version: 'v1',
+      state: 'Rascunho',
+      offer: JSON.stringify(briefing.offer),
+      hypothesis: JSON.stringify(briefing.hypothesis),
+      audience: JSON.stringify(briefing.audience),
+      execution_window: JSON.stringify(briefing.execution_window),
+      analysis_period: briefing.analysis_period,
+      budget: JSON.stringify(briefing.budget),
+      criteria: JSON.stringify(briefing.criteria),
+      owner_user: briefing.owner_user,
+      briefing_responsible: briefing.briefing_responsible,
+      synthetic_only: true,
+      publication_status: 'não solicitado',
+      spend_status: 'não solicitado',
+    })
+    throw new Error('Falha de governança: a duplicidade foi aceita.')
+  } catch (error: any) {
+    if (String(error?.message || '').includes('duplicat')) throw error
+    return { bloqueada: true, motivo: 'experiment_id único preservado pelo banco.' }
+  }
 }
 
 export async function registrarBloqueio(
