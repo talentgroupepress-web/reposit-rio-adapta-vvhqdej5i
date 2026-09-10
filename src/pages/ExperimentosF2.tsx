@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, History, LogIn, LogOut, RefreshCw, ShieldCheck } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
@@ -280,6 +280,7 @@ export function ExperimentoF2DetailPage() {
   const [aprovacoes, setAprovacoes] = useState<AprovacaoF2[]>([])
   const [bloqueios, setBloqueios] = useState<BloqueioF2[]>([])
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
+  const historicoRef = useRef<HTMLDivElement | null>(null)
   const [modal, setModal] = useState<null | {
     tipo: 'transicao' | 'versao' | 'aprovacao' | 'bloqueio'
     destino?: EstadoBriefing
@@ -346,6 +347,14 @@ export function ExperimentoF2DetailPage() {
     try {
       if (modal.tipo === 'transicao' && modal.destino) {
         await executarTransicao(modal.destino, motivo)
+        if (modal.destino === 'Bloqueado') {
+          await registrarBloqueio(item, {
+            motivo,
+            regra: 'Decisão 15 — bloqueios estruturados',
+            identificadoPor: usuario?.name || 'usuário sintético',
+            correcao: 'A definir pelo responsável do briefing.',
+          })
+        }
       } else if (modal.tipo === 'versao') {
         await criarNovaVersao(item, motivo, {})
       } else if (modal.tipo === 'aprovacao') {
@@ -439,7 +448,23 @@ export function ExperimentoF2DetailPage() {
               <Button variant="outline" onClick={() => setModal({ tipo: 'bloqueio' })}>
                 Registrar bloqueio
               </Button>
-              <Button variant="ghost" onClick={() => setMostrarHistorico((v) => !v)}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  const abrir = !mostrarHistorico
+                  setMostrarHistorico(abrir)
+                  if (abrir) {
+                    setTimeout(
+                      () =>
+                        historicoRef.current?.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'start',
+                        }),
+                      100,
+                    )
+                  }
+                }}
+              >
                 <History className="mr-2 h-4 w-4" />
                 Histórico
               </Button>
@@ -534,7 +559,7 @@ export function ExperimentoF2DetailPage() {
             {mostrarHistorico && (
               <>
                 <Separator />
-                <div className="space-y-4">
+                <div className="space-y-4" ref={historicoRef}>
                   <div>
                     <h2 className="mb-2 text-lg font-semibold">Versões do briefing</h2>
                     {versoes.length === 0 && (
