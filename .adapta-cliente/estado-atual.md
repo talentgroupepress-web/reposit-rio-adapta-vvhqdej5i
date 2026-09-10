@@ -9,6 +9,6 @@
 - teste_humano: pendente — validação humana expressa do Champion será exigida após implementação, testes, regressão e preview
 - verificacao_automatica: passou — QA Skip v0.0.35; migration 0006-0010 aplicadas; collections F2 criadas; build, análise estática, integrações e testes passaram; preview acessível; regressão estrutural da Fase 1 preservada; validação humana pendente
 - aprendizado: pendente
-- ultima_acao: F2-T01 operacional implementada no Skip; collections próprias, migrations 0006-0010, interface /experimentos, persistência sintética, permissões humanas e preview verificados; Fase 1 não foi alterada e .skip.config.json permaneceu pendente/inalterado
+- ultima_acao: F2-T01 operacional concluída tecnicamente no Skip (v0.0.38): interface legível com transições controladas (motivo obrigatório em Bloqueado/Rejeitado/Arquivado), histórico de versões, bloqueios, permissões Champion/Delegado e fluxo testado ponta a ponta no preview (transição Rascunho→Em revisão validada); Fase 1 intocada
 - proxima_acao: Champion executar validação humana no preview; não concluir F2-T01 nem iniciar F2-T02 antes do aceite
 - atualizado_em: 2026-09-11T11:31:00-03:00
