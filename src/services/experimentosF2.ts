@@ -175,7 +175,7 @@ export async function registrarAprovacao(
 ) {
   const usuario = usuarioAtual()
   if (!usuario?.id) throw new Error('É necessário estar autenticado.')
-  return pb.collection('aprovacoes_f2').create({
+  const approval = await pb.collection('aprovacoes_f2').create({
     experiment_id: briefing.experiment_id,
     briefing_version: briefing.briefing_version,
     approver: usuario.id,
