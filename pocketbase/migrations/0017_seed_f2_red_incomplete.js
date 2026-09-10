@@ -24,9 +24,12 @@ migrate(
       record.set('hypothesis', JSON.stringify({ se: '', para: '', entao: '' }))
       record.set('audience', JSON.stringify({ papel: '', empresa: '' }))
       record.set('execution_window', JSON.stringify({ inicio: '', fim: '' }))
-      record.set('analysis_period', '')
+      record.set('analysis_period', 'AUSENTE — campo não preenchido na hipótese RED')
       record.set('budget', JSON.stringify({ valor: null, moeda: 'BRL' }))
-      record.set('criteria', JSON.stringify({}))
+      record.set(
+        'criteria',
+        JSON.stringify({ status: 'AUSENTE — critérios de parada não preenchidos' }),
+      )
       record.set('owner_user', owner.id)
       record.set('briefing_responsible', responsible.id)
       record.set('synthetic_only', true)
