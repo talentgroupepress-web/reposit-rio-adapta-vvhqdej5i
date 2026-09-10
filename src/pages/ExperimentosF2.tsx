@@ -329,12 +329,23 @@ export function ExperimentoF2DetailPage() {
   )
   const bloqueioAberto = bloqueios.find((b) => b.status === 'aberto')
 
+  const executarTransicao = async (destino: EstadoBriefing, motivo: string) => {
+    if (!item) return
+    setMensagem('')
+    try {
+      await transicionarEstado(item, destino, motivo)
+      await carregar()
+    } catch (e: any) {
+      setMensagem(e?.message || 'A ação falhou.')
+    }
+  }
+
   const executar = async (motivo: string) => {
     if (!modal) return
     setMensagem('')
     try {
       if (modal.tipo === 'transicao' && modal.destino) {
-        await transicionarEstado(item, modal.destino, motivo)
+        await executarTransicao(modal.destino, motivo)
       } else if (modal.tipo === 'versao') {
         await criarNovaVersao(item, motivo, {})
       } else if (modal.tipo === 'aprovacao') {
@@ -408,7 +419,8 @@ export function ExperimentoF2DetailPage() {
                   onClick={() =>
                     exigeMotivo(destino)
                       ? setModal({ tipo: 'transicao', destino })
-                      : void executar(
+                      : void executarTransicao(
+                          destino,
                           `Transição registrada por ${usuario?.name || 'usuário sintético'}.`,
                         )
                   }
