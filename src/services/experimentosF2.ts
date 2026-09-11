@@ -1,5 +1,5 @@
 import pb from '@/lib/pocketbase/client'
-import { proximaVersao, type EstadoBriefing } from '@/lib/f2/regras'
+import { proximaVersao, validarBriefing, type EstadoBriefing } from '@/lib/f2/regras'
 
 export type BriefingF2 = {
   id: string
@@ -107,6 +107,12 @@ export async function transicionarEstado(
   motivo: string,
 ) {
   if (!pb.authStore.isValid) throw new Error('É necessário estar autenticado.')
+  if (novoEstado === 'Em revisão' || novoEstado === 'Aprovado para preparação') {
+    const erros = validarBriefing(briefing)
+    if (erros.length > 0) {
+      throw new Error(`Briefing incompleto. Corrija os campos obrigatórios: ${erros.join(' ')}`)
+    }
+  }
   const atualizado = await pb.collection('experimentos_f2').update<BriefingF2>(briefing.id, {
     state: novoEstado,
   })
