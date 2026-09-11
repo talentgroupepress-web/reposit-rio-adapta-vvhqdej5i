@@ -1,7 +1,7 @@
 # Estado atual — Adapta Cliente
 
 - fase: 2
-- task_id: F2-T02
+- task_id: nenhuma
 - champion: João Paulo
 - spec: 04_fase-atual/specs/spec-f2-001-sistema-campanhas-experimentacao.md
 - etapa: concluida
