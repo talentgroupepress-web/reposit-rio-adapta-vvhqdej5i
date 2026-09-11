@@ -395,7 +395,12 @@ export function ExperimentoF2DetailPage() {
         if (item.state === 'Em revisão')
           await transicionarEstado(item, 'Aprovado para preparação', motivo)
       } else if (modal.tipo === 'duplicidade') {
-        await tentativaDuplicidade(item)
+        const resultado = await tentativaDuplicidade(item)
+        if (resultado.bloqueada) {
+          setMensagem(
+            'Duplicidade bloqueada. O experiment_id já existe e o registro original foi preservado.',
+          )
+        }
       } else if (modal.tipo === 'aprovar_publicacao') {
         await registrarAprovacao(item, 'publicação', motivo)
       } else if (modal.tipo === 'aprovar_gasto') {
