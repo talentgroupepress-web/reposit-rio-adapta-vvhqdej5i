@@ -7,6 +7,7 @@ import Index from './pages/Index'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 import { ExperimentosF2Page, ExperimentoF2DetailPage } from './pages/ExperimentosF2'
+import T04AtribuicaoPage from './pages/T04AtribuicaoPage'
 
 // ONLY IMPORT AND RENDER WORKING PAGES, NEVER ADD PLACEHOLDER COMPONENTS OR PAGES IN THIS FILE
 // AVOID REMOVING ANY CONTEXT PROVIDERS FROM THIS FILE (e.g. TooltipProvider, Toaster, Sonner)
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/experimentos" element={<ExperimentosF2Page />} />
           <Route path="/experimentos/:id" element={<ExperimentoF2DetailPage />} />
+          <Route path="/atribuicao-t04" element={<T04AtribuicaoPage />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
