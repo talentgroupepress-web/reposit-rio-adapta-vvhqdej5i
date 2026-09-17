@@ -1,13 +1,13 @@
 # Estado atual — Adapta Cliente
 
-- task_id: F2-T04
+- task_id: F2-T05
 - champion: João Paulo
-- spec: 04_fase-atual/specs/spec-f2-002-integracao-meta-atribuicao.md
-- etapa: concluida
-- autorizacao_implementacao: confirmada — Champion autorizou a implementação da F2-T04 conforme o plano aprovado.
-- teste_humano: aprovado — 2026-09-17; 3/3 testes aprovados expressamente pelo Champion.
-- verificacao_automatica: passou — Skip v0.0.66/c27bc10; QA oficial completo; 7/7 verificações determinísticas; replay com 0 novas criações; regressão Fase 1 e F2-T01/T02/T03; schema, collections, migrations e hooks preservados.
-- aprendizado: capturado:06_notas/aprendizado-continuo/AP-2026-09-17-1024-t04-dry-run-idempotente.md
-- ultima_acao: fechamento formal documental e de governança autorizado pelo Champion em 2026-09-17; nenhum código ou dado funcional alterado no fechamento.
-- proxima_acao: nenhuma; F2-T05 permanece não iniciada e exige autorização expressa separada.
-- atualizado_em: 2026-09-17T10:24:00-03:00
+- spec: F2-003 ausente no repositório oficial; referência da task em 04_fase-atual/fase.md e matriz de rastreabilidade
+- etapa: aguardando_autorizacao
+- autorizacao_implementacao: ausente — Champion autorizou somente a análise da F2-T05 em 2026-09-17; implementação explicitamente não autorizada
+- teste_humano: pendente
+- verificacao_automatica: pendente — análise somente leitura concluída; Skip funcional v0.0.67/b49cf1c, F2-T04 e produto preservados; nenhuma alteração funcional feita
+- aprendizado: pendente
+- ultima_acao: análise oficial da F2-T05 concluída; ausência da SPEC F2-003 confirmada; produto real auditado (rotas, collections, schema, permissões e dependências); plano provisório e bloqueios apresentados ao Champion
+- proxima_acao: aguardar autorização para implementar após regularização/aceite formal do contrato F2-003; não iniciar F2-T06
+- atualizado_em: 2026-09-17T10:40:00-03:00
