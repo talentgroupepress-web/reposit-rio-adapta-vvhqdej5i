@@ -74,6 +74,9 @@ export async function listarBriefings() {
 }
 
 export async function obterBriefing(id: string) {
+  if (id.startsWith('EXP-F2-')) {
+    return pb.collection('experimentos_f2').getFirstListItem<BriefingF2>(`experiment_id = "${id}"`)
+  }
   return pb.collection('experimentos_f2').getOne<BriefingF2>(id)
 }
 

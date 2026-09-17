@@ -160,7 +160,7 @@ export default function DecisoesF2Page() {
                     {formatDate(item.next_action_due)} · evidência: {item.evidence_ref}
                   </p>
                   <a
-                    href={`/experimentos/${item.id}`}
+                    href={`/experimentos/${item.experiment_id}`}
                     className="text-sm font-medium text-indigo-700 hover:underline"
                   >
                     Abrir experimento
