@@ -1,4 +1,5 @@
 // F2-T05 — registro humano de decisão e fila da próxima ação.
+// Reenvio controlado após QA v0.0.70/v0.0.71; única migration da T05.
 // Escopo: uma collection nova, massa sintética, sem relação com demandas.
 
 migrate(

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T22:47:17.838Z",
+  "generatedAt": "2026-09-17T23:12:05.965Z",
   "collections": [
     {
       "name": "users",
@@ -29,21 +29,30 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "role",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["operador", "champion", "delegado_f2"]
+          "selectValues": [
+            "operador",
+            "champion",
+            "delegado_f2"
+          ]
         }
       ],
       "indexes": [
@@ -85,7 +94,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["inbound", "outbound", "desconhecido"]
+          "selectValues": [
+            "inbound",
+            "outbound",
+            "desconhecido"
+          ]
         },
         {
           "name": "canal",
@@ -170,28 +183,43 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["ok", "pendente", "desconhecido", "restrito"]
+          "selectValues": [
+            "ok",
+            "pendente",
+            "desconhecido",
+            "restrito"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "status_proposta",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["em_negociacao", "aceita", "recusada", "sem_retorno"]
+          "selectValues": [
+            "em_negociacao",
+            "aceita",
+            "recusada",
+            "sem_retorno"
+          ]
         },
         {
           "name": "data_conversao_comercial",
@@ -210,21 +238,31 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["aquisicao_nova", "reativacao"]
+          "selectValues": [
+            "aquisicao_nova",
+            "reativacao"
+          ]
         },
         {
           "name": "handoff_status",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["pendente", "aceito", "recusado"]
+          "selectValues": [
+            "pendente",
+            "aceito",
+            "recusado"
+          ]
         },
         {
           "name": "icp_validado",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["sim", "nao"]
+          "selectValues": [
+            "sim",
+            "nao"
+          ]
         }
       ],
       "indexes": []
@@ -257,7 +295,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["R&S", "TMO", "R&S + TMO"]
+          "selectValues": [
+            "R&S",
+            "TMO",
+            "R&S + TMO"
+          ]
         },
         {
           "name": "offer",
@@ -282,7 +324,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["inbound", "outbound", "não identificado"]
+          "selectValues": [
+            "inbound",
+            "outbound",
+            "não identificado"
+          ]
         },
         {
           "name": "channel",
@@ -366,14 +412,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "owner_label",
@@ -477,7 +528,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["não aprovada", "válida", "revogada", "substituída"]
+          "selectValues": [
+            "não aprovada",
+            "válida",
+            "revogada",
+            "substituída"
+          ]
         },
         {
           "name": "actor",
@@ -491,14 +547,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "actor_label",
@@ -588,14 +649,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "actor_label",
@@ -686,7 +752,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["válida", "revogada", "substituída"]
+          "selectValues": [
+            "válida",
+            "revogada",
+            "substituída"
+          ]
         },
         {
           "name": "decision_reason",
@@ -699,14 +769,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "approver_label",
@@ -777,25 +852,268 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["aberto", "resolvido", "mantido", "decisão humana"]
+          "selectValues": [
+            "aberto",
+            "resolvido",
+            "mantido",
+            "decisão humana"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
         "CREATE INDEX idx_bloqueios_f2_experiment ON bloqueios_f2 (experiment_id, status)"
+      ]
+    },
+    {
+      "name": "decisoes_f2",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.body.status = 'pendente'",
+        "update": "@request.auth.id != '' && (@request.auth.role = 'champion' || @request.auth.role = 'delegado_f2')",
+        "delete": ""
+      },
+      "fields": [
+        {
+          "name": "decision_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "experiment_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "briefing_version",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "analysis_period",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "criterion_snapshot",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "evidence_ref",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "evidence_mode",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "sintetico_manual",
+            "manual",
+            "reconciliado"
+          ]
+        },
+        {
+          "name": "evidence_snapshot",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "volume_evidence",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "quality_evidence",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "divergences",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responsible_reading",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "decision",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "continuar",
+            "ajustar",
+            "interromper"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "pendente",
+            "registrada",
+            "revogada"
+          ]
+        },
+        {
+          "name": "decision_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "decider_label",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "decided_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "decided_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "owner_label",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "next_action",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "next_action_owner",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "next_action_due",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "next_action_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "pendente",
+            "em_andamento",
+            "concluida"
+          ]
+        },
+        {
+          "name": "next_action_evidence",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "previous_decision_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "revocation_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "revoked_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "revoked_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "synthetic_only",
+          "type": "bool",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_decisoes_f2_decision_id ON decisoes_f2 (decision_id)",
+        "CREATE INDEX idx_decisoes_f2_experiment_status ON decisoes_f2 (experiment_id, status)",
+        "CREATE INDEX idx_decisoes_f2_action_due ON decisoes_f2 (next_action_status, next_action_due)"
       ]
     }
   ]
