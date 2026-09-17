@@ -289,6 +289,21 @@ export function DecisaoMarketingSection({
       setBusy(false)
     }
   }
+  const createSuccessor = async (decision: DecisaoF2) => {
+    setBusy(true)
+    setError('')
+    try {
+      await criarDecisaoSubsequente(decision)
+      setMessage('Nova decisão pendente criada, preservando a decisão revogada.')
+      await load()
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Não foi possível criar a decisão subsequente.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
   const revokeDecision = async () => {
     if (!revoke) return
     setBusy(true)
