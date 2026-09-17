@@ -36,6 +36,7 @@ import {
   type BriefingF2,
   type VersaoF2,
 } from '@/services/experimentosF2'
+import { DecisaoMarketingSection } from '@/components/f2/DecisaoMarketingSection'
 
 const USUARIO_SINTETICO = {
   email: 'humano-sintetico-aprovador-01@f2.invalid',
@@ -519,6 +520,12 @@ export function ExperimentoF2DetailPage() {
                 </div>
               </CardContent>
             </Card>
+            <DecisaoMarketingSection
+              experimentId={item.experiment_id}
+              briefingVersion={item.briefing_version}
+              analysisPeriod={item.analysis_period}
+              criteria={criterios}
+            />
             <div className="flex flex-wrap gap-2">
               {(TRANSICOES[item.state] || []).map((destino) => (
                 <Button

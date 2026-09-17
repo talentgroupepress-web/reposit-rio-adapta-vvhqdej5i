@@ -20,6 +20,9 @@ export default function Layout() {
             <a className="text-slate-600 hover:text-slate-950" href="/atribuicao-t04">
               Atribuição T04
             </a>
+            <a className="text-slate-600 hover:text-slate-950" href="/decisoes-f2">
+              Decisões F2
+            </a>
           </div>
         </nav>
       </header>
