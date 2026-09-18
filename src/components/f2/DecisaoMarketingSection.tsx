@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { RotateCcw, ShieldCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -236,6 +236,19 @@ export function DecisaoMarketingSection({
   const [message, setMessage] = useState('')
   const [revoke, setRevoke] = useState<DecisaoF2 | null>(null)
   const [reason, setReason] = useState('')
+  const formRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (formDecision) {
+      setTimeout(
+        () =>
+          formRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          }),
+        100,
+      )
+    }
+  }, [formDecision])
   const load = useCallback(async () => {
     try {
       setDecisions(await listarDecisoes(experimentId))
@@ -405,17 +418,19 @@ export function DecisaoMarketingSection({
           </a>
         </div>
         {formDecision && (
-          <DecisionForm
-            decision={formDecision}
-            briefingVersion={briefingVersion}
-            criterionSnapshot={criteria}
-            onSaved={async () => {
-              setFormDecision(null)
-              setMessage('Decisão registrada.')
-              await load()
-            }}
-            onCancel={() => setFormDecision(null)}
-          />
+          <div ref={formRef}>
+            <DecisionForm
+              decision={formDecision}
+              briefingVersion={briefingVersion}
+              criterionSnapshot={criteria}
+              onSaved={async () => {
+                setFormDecision(null)
+                setMessage('Decisão registrada.')
+                await load()
+              }}
+              onCancel={() => setFormDecision(null)}
+            />
+          </div>
         )}
         {revoke && (
           <div className="rounded-md border border-red-200 bg-red-50 p-4">
