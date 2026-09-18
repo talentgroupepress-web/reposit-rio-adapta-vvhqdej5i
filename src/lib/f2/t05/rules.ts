@@ -14,12 +14,8 @@ function text(value: unknown) {
 export function evidenceIsClickOnly(volume: string, quality: string) {
   const all = `${volume} ${quality}`.toLocaleLowerCase('pt-BR')
   const hasActivity = /(clique|impress|abandono)/.test(all)
-  const hasQuality = /(lead qual|oportun|propost|convers|cliente)/.test(all)
-  const explicitNoQuality =
-    /(qualidade comercial (ausente|inexistente|não|nao)|sem qualidade|0\s+leads?\s+qual|0\s+oportun)/.test(
-      all,
-    )
-  return hasActivity && (!hasQuality || explicitNoQuality)
+  const hasPositiveQuality = /(lead qual|oportun|propost|convers|cliente)/.test(all)
+  return hasActivity && !hasPositiveQuality
 }
 
 export function validateDecisionInput(input: DecisionInput) {

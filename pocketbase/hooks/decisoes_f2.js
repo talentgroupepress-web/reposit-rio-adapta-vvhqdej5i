@@ -55,11 +55,7 @@ onRecordUpdate((e) => {
     const qualityEvidence = /(lead qual|oportun|propost|convers|cliente)/.test(
       `${volume} ${quality}`,
     )
-    const explicitNoQuality =
-      /(qualidade comercial (ausente|inexistente|não|nao)|sem qualidade|0\s+leads?\s+qual|0\s+oportun)/.test(
-        `${volume} ${quality}`,
-      )
-    if (activityOnly && (!qualityEvidence || explicitNoQuality))
+    if (activityOnly && !qualityEvidence)
       reject('Clique, impressão ou abandono isolado não permite registrar sucesso/qualidade.')
     if (decision === 'ajustar' && !nextActionHasNewVersion)
       reject('AJUSTAR exige próxima ação apontando nova versão do briefing.')
