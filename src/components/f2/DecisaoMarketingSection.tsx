@@ -8,6 +8,7 @@ import {
   listarDecisoes,
   registrarDecisao,
   revogarDecisao,
+  criarDecisaoSubsequente,
 } from '@/services/decisoesF2'
 import { validateDecisionInput } from '@/lib/f2/t05/rules'
 import type { DecisaoF2, DecisionInput } from '@/lib/f2/t05/types'
@@ -396,6 +397,16 @@ export function DecisaoMarketingSection({
                 <Button size="sm" variant="outline" onClick={() => setRevoke(decision)}>
                   <RotateCcw className="mr-1 h-4 w-4" />
                   Revogar
+                </Button>
+              )}
+              {decision.status === 'revogada' && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void createSuccessor(decision)}
+                  disabled={busy}
+                >
+                  Criar próxima decisão
                 </Button>
               )}
             </div>
