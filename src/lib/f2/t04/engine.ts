@@ -1,4 +1,10 @@
 import {
+  reconcileByRecordId,
+  planCoreActions,
+  type CoreReport,
+  type CoreSourceRecord,
+} from '@/lib/f2/reconciliation/core'
+import {
   PIPELINE_BASELINE_SNAPSHOT,
   SOURCE_BATCH,
   T04_BATCH_ID,
@@ -20,7 +26,33 @@ const projection = (record: T04SourceRecord | T04PipelineRecord) =>
     record.qualidade || '',
   ])
 
-const groupSourceRows = (sourceRows: T04SourceRecord[]) => {
+const toCoreSource = (record: T04SourceRecord): CoreSourceRecord => ({
+  sourceRow: record.sourceRow,
+  sourceLabel: record.sourceLabel,
+  recordId: record.record_id,
+  sourceOrigin: record.tipo_origem,
+  sourceCampaign: record.campanha,
+  payload: projection(record),
+})
+
+const toCoreTarget = (record: T04PipelineRecord) => ({
+  recordId: record.record_id,
+  payload: projection(record),
+})
+
+const statusToT04 = (status: CoreReport['rows'][number]['status']): T04ReportRow['status'] => {
+  if (status === 'preservado') return 'preservado_no_pipeline'
+  if (status === 'desconhecido_preservado') return 'desconhecido_preservado'
+  if (status === 'desconhecido_sem_destino') return 'ausente_no_pipeline'
+  if (status === 'ausente_no_destino') return 'ausente_no_pipeline'
+  return status
+}
+
+const toT04Report = (
+  coreReport: CoreReport,
+  sourceRows: T04SourceRecord[],
+  pipelineRows: T04PipelineRecord[],
+): T04Report => {
   const groups = new Map<string, T04SourceRecord[]>()
   sourceRows.forEach((row) => {
     if (!row.record_id) return
@@ -28,167 +60,76 @@ const groupSourceRows = (sourceRows: T04SourceRecord[]) => {
     rows.push(row)
     groups.set(row.record_id, rows)
   })
-  return groups
-}
-
-const statusIsPreserved = (status: T04ReportRow['status']) =>
-  status === 'preservado_no_pipeline' || status === 'desconhecido_preservado'
-
-export function reconcileT04(
-  sourceRows: T04SourceRecord[],
-  pipelineRows: T04PipelineRecord[],
-): T04Report {
-  const groups = groupSourceRows(sourceRows)
   const byId = new Map(pipelineRows.map((row) => [row.record_id, row]))
-  const invalidRows = sourceRows.filter((row) => !row.record_id)
-  const rows: T04ReportRow[] = []
-
-  groups.forEach((group, recordId) => {
-    const target = byId.get(recordId)
-    const first = group[0]
-    const identical = group.every((row) => projection(row) === projection(first))
-    const sourceRowsNumbers = group.map((row) => row.sourceRow)
-    const targetPresent = Boolean(target)
-
-    if (group.length > 1) {
-      rows.push({
-        record_id: recordId,
-        sourceRows: sourceRowsNumbers,
-        sourceCount: group.length,
-        sourceOrigin: first.tipo_origem || 'sem origem',
-        sourceCampaign: first.campanha || 'sem campanha',
-        targetPresent,
-        status: identical ? 'duplicidade_no_lote' : 'conflito_no_lote',
-        detail: identical
-          ? 'Chave repetida com payload idêntico; o reprocessamento não deve criar uma segunda gravação.'
-          : 'Chave repetida com payload divergente; bloquear e encaminhar para revisão humana, sem overwrite.',
-        owner: 'Responsável pela qualidade da fonte',
-      })
-      return
-    }
-
-    if (!target) {
-      rows.push({
-        record_id: recordId,
-        sourceRows: sourceRowsNumbers,
-        sourceCount: 1,
-        sourceOrigin: first.tipo_origem || 'sem origem',
-        sourceCampaign: first.campanha || 'sem campanha',
-        targetPresent: false,
-        status: 'ausente_no_pipeline',
-        detail:
-          'Registro de teste ainda não está no pipeline; ação prevista no dry-run: criar uma vez.',
-        owner: 'Responsável pela qualidade da fonte',
-      })
-      return
-    }
-
-    const same = projection(first) === projection(target)
-    if (!same) {
-      rows.push({
-        record_id: recordId,
-        sourceRows: sourceRowsNumbers,
-        sourceCount: 1,
-        sourceOrigin: first.tipo_origem || 'sem origem',
-        sourceCampaign: first.campanha || 'sem campanha',
-        targetPresent: true,
-        status: 'conflito_com_pipeline',
-        detail: 'O mesmo record_id já existe no pipeline com payload diferente; não sobrescrever.',
-        owner: 'Responsável pela qualidade da fonte',
-      })
-      return
-    }
-
-    rows.push({
-      record_id: recordId,
-      sourceRows: sourceRowsNumbers,
-      sourceCount: 1,
-      sourceOrigin: first.tipo_origem || 'sem origem',
-      sourceCampaign: first.campanha || 'sem campanha',
-      targetPresent: true,
-      status:
-        first.tipo_origem === 'desconhecido' ? 'desconhecido_preservado' : 'preservado_no_pipeline',
-      detail:
-        first.tipo_origem === 'desconhecido'
-          ? 'Origem desconhecida preservada sem inferência de canal ou campanha.'
-          : 'Payload da fonte coincide com o registro existente no pipeline.',
-      owner: 'Responsável pela qualidade da fonte',
-    })
-  })
-
   const baseline = sourceRows.filter((row) => row.kind === 'baseline')
   const baselineRows = baseline.filter((row) => {
     const target = byId.get(row.record_id)
     return Boolean(target) && projection(row) === projection(target)
   })
-  const sourceIds = new Set(groups.keys())
-  const pipelineOnlyKeys = pipelineRows.filter((row) => !sourceIds.has(row.record_id))
-  const duplicateRows = rows
-    .filter((row) => row.status === 'duplicidade_no_lote')
-    .reduce((total, row) => total + Math.max(0, row.sourceCount - 1), 0)
-  const conflictRows = rows
-    .filter((row) => row.status === 'conflito_no_lote' || row.status === 'conflito_com_pipeline')
-    .reduce((total, row) => total + row.sourceCount, 0)
 
   return {
-    batchId: T04_BATCH_ID,
-    rows,
-    invalidRows,
+    batchId: coreReport.batchId,
+    rows: coreReport.rows.map((row) => ({
+      record_id: row.recordId,
+      sourceRows: row.sourceRows,
+      sourceCount: row.sourceCount,
+      sourceOrigin: row.sourceOrigin,
+      sourceCampaign: row.sourceCampaign,
+      targetPresent: row.targetPresent,
+      status: statusToT04(row.status),
+      detail: row.detail,
+      owner: row.owner,
+    })),
+    invalidRows: sourceRows.filter((row) => !row.record_id),
     summary: {
-      totalSourceRows: sourceRows.length,
-      uniqueSourceKeys: groups.size,
-      invalidKeys: invalidRows.length,
-      matchedKeys: rows.filter((row) => statusIsPreserved(row.status)).length,
-      sourceOnlyKeys: rows.filter((row) => row.status === 'ausente_no_pipeline').length,
-      pipelineOnlyKeys: pipelineOnlyKeys.length,
-      duplicateGroups: rows.filter((row) => row.status === 'duplicidade_no_lote').length,
-      duplicateRows,
-      conflictGroups: rows.filter(
-        (row) => row.status === 'conflito_no_lote' || row.status === 'conflito_com_pipeline',
+      totalSourceRows: coreReport.summary.totalSourceRows,
+      uniqueSourceKeys: coreReport.summary.uniqueSourceKeys,
+      invalidKeys: coreReport.summary.invalidKeys,
+      matchedKeys: coreReport.rows.filter(
+        (row) => row.status === 'preservado' || row.status === 'desconhecido_preservado',
       ).length,
-      conflictRows,
+      sourceOnlyKeys: coreReport.rows.filter(
+        (row) => row.status === 'ausente_no_destino' || row.status === 'desconhecido_sem_destino',
+      ).length,
+      pipelineOnlyKeys: coreReport.summary.pipelineOnlyKeys,
+      duplicateGroups: coreReport.summary.duplicateGroups,
+      duplicateRows: coreReport.summary.duplicateRows,
+      conflictGroups: coreReport.summary.conflictGroups,
+      conflictRows: coreReport.summary.conflictRows,
       unknownRows: sourceRows.filter((row) => row.tipo_origem === 'desconhecido').length,
       baselineReconciliationPassed:
-        baseline.length === baselineRows.length && pipelineOnlyKeys.length === 0,
+        baseline.length === baselineRows.length && coreReport.summary.pipelineOnlyKeys === 0,
     },
   }
+}
+
+const toCoreReport = (sourceRows: T04SourceRecord[], pipelineRows: T04PipelineRecord[]) =>
+  reconcileByRecordId({
+    batchId: T04_BATCH_ID,
+    sourceRows: sourceRows.map(toCoreSource),
+    targetRows: pipelineRows.map(toCoreTarget),
+  })
+
+export function reconcileT04(
+  sourceRows: T04SourceRecord[],
+  pipelineRows: T04PipelineRecord[],
+): T04Report {
+  return toT04Report(toCoreReport(sourceRows, pipelineRows), sourceRows, pipelineRows)
 }
 
 export function planT04Actions(
   sourceRows: T04SourceRecord[],
   pipelineRows: T04PipelineRecord[],
 ): T04Action[] {
-  const report = reconcileT04(sourceRows, pipelineRows)
-  const sourceById = new Map(
-    sourceRows.filter((row) => row.record_id).map((row) => [row.record_id, row]),
-  )
-  return report.rows.map((row) => {
-    const source =
-      sourceById.get(row.record_id) ||
-      sourceRows.find((candidate) => candidate.sourceRow === row.sourceRows[0])!
-    if (row.status === 'ausente_no_pipeline' && row.sourceCount === 1) {
-      return {
-        kind: 'create',
-        source,
-        detail: 'Dry-run: criar uma vez, sem gravar no pipeline nesta task.',
-      }
-    }
-    if (row.status === 'duplicidade_no_lote') {
-      return {
-        kind: 'skip',
-        source,
-        detail: 'Dry-run: ignorar replay idêntico; nenhuma duplicata.',
-      }
-    }
-    if (row.status === 'conflito_no_lote' || row.status === 'conflito_com_pipeline') {
-      return {
-        kind: 'conflict',
-        source,
-        detail: 'Dry-run: bloquear conflito; revisão humana necessária.',
-      }
-    }
-    return { kind: 'skip', source, detail: 'Dry-run: registro já preservado no pipeline.' }
-  })
+  const coreSourceRows = sourceRows.map(toCoreSource)
+  const coreReport = toCoreReport(sourceRows, pipelineRows)
+  const sourceByRow = new Map(sourceRows.map((row) => [row.sourceRow, row]))
+
+  return planCoreActions(coreSourceRows, coreReport).map((action) => ({
+    kind: action.kind,
+    source: sourceByRow.get(action.source.sourceRow)!,
+    detail: action.detail,
+  }))
 }
 
 export function toPipelineRecord(source: T04SourceRecord): T04PipelineRecord {

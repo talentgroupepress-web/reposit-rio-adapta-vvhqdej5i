@@ -24,6 +24,7 @@ import {
   runT04DeterministicChecks,
   toPipelineRecord,
 } from '@/lib/f2/t04/engine'
+import T08FallbackProof from '@/components/f2/T08FallbackProof'
 
 const statusLabels: Record<string, string> = {
   preservado_no_pipeline: 'Preservado no pipeline',
@@ -408,6 +409,7 @@ export default function T04AtribuicaoPage() {
             )}
           </>
         )}
+        <T08FallbackProof pipeline={pipeline} disabled={loading || processing} />
       </main>
     </div>
   )
