@@ -495,7 +495,7 @@ export function runT08DeterministicChecks(pipelineRows: T04PipelineRecord[]) {
       label: 'Reconciliação usa o núcleo compartilhado e mantém o pipeline somente leitura',
       passed:
         first.report.batchId === T08_BATCH_ID &&
-        first.report.summary.pipelineOnlyKeys === 6 &&
+        first.report.summary.pipelineOnlyKeys === 8 &&
         pipelineRows.length === 10 &&
         first.safeState === 'bloqueada',
       detail: `adapter manual → reconcileByRecordId → relatório dry-run · ${first.report.summary.pipelineOnlyKeys} registros do destino não vieram neste lote · estado ${first.safeState}`,
