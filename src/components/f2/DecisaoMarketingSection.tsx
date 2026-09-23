@@ -335,67 +335,74 @@ export function DecisaoMarketingSection({
     }
   }
   return (
-    <Card className="border-indigo-200 bg-indigo-50/30">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">Decisão de Marketing</CardTitle>
-            <p className="mt-1 text-sm font-normal text-slate-600">
-              Registro humano da leitura do experimento e fila da próxima ação.
-            </p>
-          </div>
-          <ShieldCheck className="h-5 w-5 text-indigo-700" />
+    <div className="rounded-xl border border-[#dadce0] bg-white p-5 space-y-4">
+      <div className="flex items-start justify-between gap-3 border-b border-[#f1f3f4] pb-3">
+        <div>
+          <h3 className="text-sm font-medium text-[#202124]">Decisão de Marketing (GA4)</h3>
+          <p className="mt-0.5 text-xs text-[#5f6368]">
+            Registro humano da leitura do experimento e fila da próxima ação.
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-md border border-indigo-200 bg-white p-3 text-xs text-slate-700">
-          <b>Proteção:</b> decisão humana; sem publicação, orçamento, automação ou alteração em
-          demandas. Evidência T04 é sintética/manual.
+        <ShieldCheck className="h-5 w-5 text-[#1a73e8]" />
+      </div>
+      <div className="space-y-4">
+        <div className="rounded-lg border border-[#dadce0] bg-[#f8f9fa] p-3 text-xs text-[#5f6368]">
+          <strong className="text-[#202124]">Proteção GA4:</strong> decisão humana; sem publicação,
+          orçamento, automação ou alteração em demandas. Evidência T04 é sintética/manual.
         </div>
         {error && (
-          <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <p className="rounded-lg border border-[#fad2cf] bg-[#fce8e6] p-3 text-xs text-[#c5221f]">
             {error}
           </p>
         )}
         {message && (
-          <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          <p className="rounded-lg border border-[#ceead6] bg-[#e6f4ea] p-3 text-xs text-[#137333]">
             {message}
           </p>
         )}
         {decisions.map((decision) => (
           <div
             key={decision.id || decision.decision_id}
-            className={`rounded-md border p-3 ${statusClass[decision.status] || 'border-slate-200 bg-white'}`}
+            className={`rounded-lg border p-3.5 text-xs ${statusClass[decision.status] || 'border-[#dadce0] bg-white'}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <b>{decision.decision_id}</b> · {decision.experiment_id} ·{' '}
-                {decision.briefing_version}
+                <strong className="font-mono text-[#1a73e8]">{decision.decision_id}</strong> ·{' '}
+                {decision.experiment_id} · {decision.briefing_version}
               </div>
               <div className="flex gap-2">
                 <Badge variant="outline">{statusLabels[decision.status]}</Badge>
                 {decision.decision && <Badge>{decisionLabels[decision.decision]}</Badge>}
               </div>
             </div>
-            <p className="mt-2 text-sm">
+            <p className="mt-2 text-xs text-[#202124]">
               {decision.responsible_reading || 'Ainda sem leitura final; permanece pendente.'}
             </p>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="mt-1 text-[11px] text-[#5f6368]">
               Evidência: {decision.evidence_ref} · Período: {decision.analysis_period}
             </p>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="mt-1 text-[11px] text-[#5f6368]">
               Próxima ação: {decision.next_action} · responsável: {decision.next_action_owner} ·
               prazo: {formatDate(decision.next_action_due)}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {decision.status === 'pendente' && (
-                <Button size="sm" onClick={() => setFormDecision(decision)}>
+                <Button
+                  size="sm"
+                  className="h-7 rounded-full text-xs bg-[#1a73e8] hover:bg-[#1557b0]"
+                  onClick={() => setFormDecision(decision)}
+                >
                   Registrar decisão
                 </Button>
               )}
               {decision.status === 'registrada' && (
-                <Button size="sm" variant="outline" onClick={() => setRevoke(decision)}>
-                  <RotateCcw className="mr-1 h-4 w-4" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 rounded-full text-xs border-[#dadce0]"
+                  onClick={() => setRevoke(decision)}
+                >
+                  <RotateCcw className="mr-1 h-3.5 w-3.5" />
                   Revogar
                 </Button>
               )}
@@ -403,6 +410,7 @@ export function DecisaoMarketingSection({
                 <Button
                   size="sm"
                   variant="outline"
+                  className="h-7 rounded-full text-xs border-[#dadce0]"
                   onClick={() => void createSuccessor(decision)}
                   disabled={busy}
                 >
@@ -413,17 +421,23 @@ export function DecisaoMarketingSection({
           </div>
         ))}
         {decisions.length === 0 && (
-          <p className="text-sm text-slate-600">
+          <p className="text-xs text-[#5f6368]">
             Nenhuma decisão registrada para este experimento.
           </p>
         )}
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => void createPending()} disabled={busy}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full border-[#dadce0] text-xs"
+            onClick={() => void createPending()}
+            disabled={busy}
+          >
             Criar pendência de decisão
           </Button>
           <a
             href="/decisoes-f2"
-            className="inline-flex h-10 items-center rounded-md border border-slate-300 px-4 text-sm font-medium"
+            className="inline-flex h-8 items-center rounded-full border border-[#dadce0] px-3.5 text-xs font-medium text-[#202124] hover:bg-[#f1f3f4]"
           >
             Abrir fila de decisões
           </a>
@@ -471,7 +485,7 @@ export function DecisaoMarketingSection({
             A decisão anterior foi preservada. Crie uma nova decisão pendente para o próximo ciclo.
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

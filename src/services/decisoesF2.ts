@@ -1,6 +1,6 @@
 import pb from '@/lib/pocketbase/client'
 import { nextDecisionId, validateDecisionInput } from '@/lib/f2/t05/rules'
-import type { DecisaoF2, DecisionInput } from './types'
+import type { DecisaoF2, DecisionInput } from '@/lib/f2/t05/types'
 
 function usuarioAtual() {
   return pb.authStore.model as

@@ -9,58 +9,62 @@
 
 @layer base {
   :root {
-    /* Change the colors to match the design system */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* GA4 Google Material palette */
+    --background: 210 17% 98%; /* #f8f9fa */
+    --foreground: 225 6% 13%; /* #202124 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* #ffffff */
+    --card-foreground: 225 6% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 225 6% 13%;
 
-    --primary: 222.2 84% 4.9%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 89% 51%; /* Google Blue #1a73e8 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 98%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary: 214 20% 95%; /* #eef2f6 */
+    --secondary-foreground: 225 6% 25%;
 
-    --muted: 210 40% 98%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 214 15% 94%;
+    --muted-foreground: 215 5% 39%; /* #5f6368 */
 
-    --accent: 210 40% 98%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 214 89% 95%; /* #e8f0fe */
+    --accent-foreground: 217 89% 45%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 3 76% 45%; /* #c5221f */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 217 10% 86%; /* #dadce0 */
+    --input: 217 10% 86%;
+    --ring: 217 89% 51%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 222.2 84% 4.9%;
-
-    --sidebar-primary: 222.2 84% 4.9%;
-
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 225 6% 13%;
+    --sidebar-primary: 217 89% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 89% 95%;
+    --sidebar-accent-foreground: 217 89% 51%;
+    --sidebar-border: 217 10% 90%;
+    --sidebar-ring: 217 89% 51%;
 
-    --sidebar-accent: 210 40% 98%;
+    --chart-1: 217 89% 51%; /* Google Blue */
+    --chart-2: 41 100% 49%; /* Google Amber/Orange */
+    --chart-3: 139 71% 26%; /* Google Green */
+    --chart-4: 3 76% 45%; /* Google Red */
+    --chart-5: 271 76% 53%; /* Purple */
+  }
 
-    --sidebar-accent-foreground: 222.2 84% 4.9%;
-
-    --sidebar-border: 214.3 31.8% 91.4%;
-
-    --sidebar-ring: 222.2 84% 4.9%;
-
-    --chart-1: 34 100% 44%;
-    --chart-2: 189 100% 38%;
-    --chart-3: 209 100% 32%;
-    --chart-4: 42 100% 50%;
-    --chart-5: 33 100% 50%;
+  body {
+    background-color: #f8f9fa;
+    color: #202124;
+    font-family:
+      'Roboto',
+      system-ui,
+      -apple-system,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   .dark {

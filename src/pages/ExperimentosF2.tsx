@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, History, LogIn, LogOut, RefreshCw, ShieldCheck } from 'lucide-react'
+import {
+  ArrowLeft,
+  Compass,
+  History,
+  LogIn,
+  LogOut,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  TrendingUp,
+  X,
+} from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import {
   CRITERIOS_PARADA,
   corDoEstado,
@@ -37,6 +45,8 @@ import {
   type VersaoF2,
 } from '@/services/experimentosF2'
 import { DecisaoMarketingSection } from '@/components/f2/DecisaoMarketingSection'
+import { GaMetricCard } from '@/components/ga/GaMetricCard'
+import { GaCard } from '@/components/ga/GaCard'
 
 const USUARIO_SINTETICO = {
   email: 'humano-sintetico-aprovador-01@f2.invalid',
@@ -61,30 +71,35 @@ function LoginCard({ onLogin }: { onLogin: () => void }) {
     }
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Acesso de validação</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-slate-600">
-          Use somente o usuário sintético preparado para testar a F2-T01. Nenhum usuário real é
-          usado nesta prova.
-        </p>
-        <Button onClick={login} disabled={busy}>
-          <LogIn className="mr-2 h-4 w-4" />
-          {busy ? 'Entrando…' : 'Entrar como usuário sintético'}
-        </Button>
-        {error && <p className="text-sm text-red-700">{error}</p>}
-      </CardContent>
-    </Card>
+    <div className="rounded-xl border border-[#dadce0] bg-white p-6 shadow-none max-w-md mx-auto">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="h-2 w-2 rounded-full bg-[#1a73e8]" />
+        <h2 className="text-base font-medium text-[#202124]">
+          Acesso de validação Google Analytics
+        </h2>
+      </div>
+      <p className="text-xs text-[#5f6368] mb-4 leading-relaxed">
+        Use o usuário de validação para gerenciar os briefings de experimentos. Nenhum dado do mundo
+        real é consumido.
+      </p>
+      <Button
+        onClick={login}
+        disabled={busy}
+        className="w-full h-9 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none gap-2"
+      >
+        <LogIn className="h-4 w-4" />
+        {busy ? 'Autenticando…' : 'Entrar como usuário sintético'}
+      </Button>
+      {error && <p className="mt-3 text-xs text-[#c5221f]">{error}</p>}
+    </div>
   )
 }
 
 function Linha({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{titulo}</p>
-      <div className="text-sm text-slate-800">{children}</div>
+    <div className="space-y-0.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-[#5f6368]">{titulo}</p>
+      <div className="text-xs text-[#202124]">{children}</div>
     </div>
   )
 }
@@ -97,7 +112,7 @@ function TextoOuVazio({ valor }: { valor: unknown }) {
 function ListaOuVazio({ valor }: { valor: unknown }) {
   if (Array.isArray(valor) && valor.length > 0) {
     return (
-      <ul className="list-disc pl-4">
+      <ul className="list-disc pl-4 space-y-0.5">
         {valor.map((item, i) => (
           <li key={i}>{String(item)}</li>
         ))}
@@ -121,27 +136,36 @@ function ModalMotivo({
   const [motivo, setMotivo] = useState('')
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md space-y-3 rounded-lg bg-white p-5 shadow-lg">
-        <h3 className="text-lg font-semibold">{titulo}</h3>
-        <p className="text-sm text-slate-600">{descricao}</p>
+      <div className="w-full max-w-md space-y-3 rounded-xl border border-[#dadce0] bg-white p-5 shadow-lg">
+        <h3 className="text-sm font-medium text-[#202124]">{titulo}</h3>
+        <p className="text-xs text-[#5f6368]">{descricao}</p>
         <textarea
-          className="min-h-24 w-full rounded-md border p-2 text-sm"
+          className="min-h-24 w-full rounded-lg border border-[#dadce0] p-2.5 text-xs text-[#202124] focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none"
           placeholder="Descreva o motivo (obrigatório)"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
         />
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onCancel}>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="h-8 rounded-full text-xs text-[#5f6368]"
+          >
             Cancelar
           </Button>
           <Button
+            size="sm"
             onClick={() => motivo.trim() && onConfirm(motivo.trim())}
             disabled={!motivo.trim()}
+            className="h-8 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none"
           >
             Confirmar
           </Button>
         </div>
-        <p className="text-xs text-slate-500">O registro fica no histórico da versão atual.</p>
+        <p className="text-[11px] text-[#5f6368]">
+          O registro fica arquivado no histórico da versão atual.
+        </p>
       </div>
     </div>
   )
@@ -159,7 +183,9 @@ const TRANSICOES: Record<EstadoBriefing, EstadoBriefing[]> = {
 export function ExperimentosF2Page() {
   const [items, setItems] = useState<BriefingF2[]>([])
   const [error, setError] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
   const [, force] = useState(0)
+
   const load = async () => {
     setError('')
     for (let tentativa = 0; tentativa < 2; tentativa += 1) {
@@ -180,114 +206,215 @@ export function ExperimentosF2Page() {
       }
     }
   }
+
   useEffect(() => {
     if (pb.authStore.isValid) void load()
   }, [])
+
+  const filteredItems = useMemo(() => {
+    if (!searchTerm.trim()) return items
+    const q = searchTerm.toLowerCase()
+    return items.filter(
+      (it) =>
+        it.experiment_id?.toLowerCase().includes(q) ||
+        it.title?.toLowerCase().includes(q) ||
+        it.channel?.toLowerCase().includes(q) ||
+        it.service?.toLowerCase().includes(q) ||
+        it.origin?.toLowerCase().includes(q),
+    )
+  }, [items, searchTerm])
+
   if (!pb.authStore.isValid)
     return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="mx-auto max-w-2xl space-y-6">
-          <h1 className="text-3xl font-bold">F2-T01 · Briefings de experimentos</h1>
-          <LoginCard
-            onLogin={() => {
-              force((x) => x + 1)
-              void load()
-            }}
-          />
-        </div>
+      <div className="p-6 sm:p-12">
+        <LoginCard
+          onLogin={() => {
+            force((x) => x + 1)
+            void load()
+          }}
+        />
       </div>
     )
+
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-slate-500">Talent Group · Fase 2</p>
-            <h1 className="text-3xl font-bold tracking-tight">Briefings de experimentos</h1>
-            <p className="text-slate-600">
-              Módulo operacional F2-T01 · dados sintéticos · sem execução externa
-            </p>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* ========================================================
+          GA4 PAGE HEADER
+         ======================================================== */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-medium text-[#5f6368]">
+            <span>Explorar</span>
+            <span>›</span>
+            <span>Fase 2 Marketing</span>
+            <span>›</span>
+            <span className="text-[#202124] font-medium">Briefings de experimentos</span>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => void load()}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Atualizar
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                pb.authStore.clear()
-                force((x) => x + 1)
-              }}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
-            <Link to="/">
-              <Button variant="ghost">Voltar ao pipeline</Button>
-            </Link>
+          <h1 className="mt-1 text-2xl sm:text-3xl font-normal tracking-tight text-[#202124]">
+            Exploração de experimentos (F2-T01)
+          </h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-[#5f6368]">
+            Definição de hipóteses, públicos e critérios de validação controlados
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => void load()}
+            className="h-8 rounded-full border border-[#dadce0] bg-white text-xs font-medium text-[#202124] hover:bg-[#f1f3f4] gap-1.5 shadow-none"
+          >
+            <RefreshCw className="h-3.5 w-3.5 text-[#5f6368]" />
+            Atualizar
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              pb.authStore.clear()
+              force((x) => x + 1)
+            }}
+            className="h-8 rounded-full text-xs text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] gap-1.5"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sair
+          </Button>
+        </div>
+      </div>
+
+      {/* GA4 Notice Box */}
+      <div className="rounded-lg border border-[#dadce0] bg-white p-3.5 flex items-start gap-3 shadow-none">
+        <ShieldCheck className="h-4 w-4 text-[#137333] mt-0.5 shrink-0" />
+        <div className="text-xs text-[#5f6368] leading-relaxed">
+          <strong className="text-[#202124] font-medium">Proteção operacional GA4:</strong> este
+          módulo não usa a collection <code>demandas</code>, não publica campanhas reais, não gasta
+          orçamento e não realiza chamadas a RD Station, 1CRM ou Meta.
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-lg border border-[#fce8e6] bg-[#fdf2f2] p-3 text-xs text-[#c5221f]">
+          {error}
+        </div>
+      )}
+
+      {/* Metric Cards Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <GaMetricCard
+          title="Total de briefings"
+          value={items.length}
+          sparklineData={[1, 2, 2, 3, 3, items.length || 3]}
+          sparklineColor="#1a73e8"
+          changeLabel="Versões gerenciadas"
+          icon={<Compass className="h-4 w-4 text-[#1a73e8]" />}
+          helpText="Total de briefings cadastrados no experimento"
+        />
+
+        <GaMetricCard
+          title="Em preparação/revisão"
+          value={items.filter((i) => i.state !== 'Arquivado').length}
+          sparklineData={[2, 2, 3, 2, 3]}
+          sparklineColor="#137333"
+          changeLabel="Ativos no fluxo"
+          icon={<ShieldCheck className="h-4 w-4 text-[#137333]" />}
+        />
+
+        <GaMetricCard
+          title="Sintéticos controlados"
+          value={items.filter((i) => i.synthetic_only).length}
+          sparklineData={[1, 2, 2, 3]}
+          sparklineColor="#e37400"
+          sparklineType="bars"
+          changeLabel="Sem risco externo"
+          icon={<RefreshCw className="h-4 w-4 text-[#e37400]" />}
+        />
+      </div>
+
+      {/* ========================================================
+          GA4 BRIEFINGS GRID
+         ======================================================== */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-medium text-[#202124]">Briefings cadastrados</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368] font-mono">
+              {filteredItems.length}
+            </span>
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5f6368]" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Pesquisar por título, canal ou serviço..."
+              className="h-8 rounded-full border border-[#dadce0] bg-white pl-8 pr-3 text-xs text-[#202124] placeholder:text-[#5f6368] focus:border-[#1a73e8] outline-none"
+            />
           </div>
         </div>
-        {error && (
-          <Card className="border-red-300">
-            <CardContent className="pt-6 text-red-700">{error}</CardContent>
-          </Card>
-        )}
-        <Card className="border-emerald-200 bg-emerald-50">
-          <CardContent className="flex items-start gap-3 pt-6 text-emerald-900">
-            <ShieldCheck className="mt-0.5 h-5 w-5" />
-            <div>
-              <b>Proteção operacional</b>
-              <p className="text-sm">
-                Este módulo não usa a collection demandas, não publica campanhas, não gasta
-                orçamento e não integra RD Station, 1CRM ou Meta.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {items.map((item) => (
-            <Link key={item.id} to={`/experimentos/${item.id}`}>
-              <Card className="h-full transition hover:border-slate-500">
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle>{item.experiment_id}</CardTitle>
-                    <Badge className={corDoEstado(item.state)}>{item.state}</Badge>
-                  </div>
-                  <p className="text-sm text-slate-600">{item.title}</p>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge>{item.origin}</Badge>
-                    <Badge variant="secondary">{item.channel}</Badge>
-                    <Badge variant="secondary">{item.service}</Badge>
-                  </div>
-                  <p>
-                    <b>Briefing:</b> {item.briefing_version} · <b>Sintético:</b>{' '}
-                    {item.synthetic_only ? 'sim' : 'não'}
-                  </p>
-                  <p>
-                    <b>Orçamento previsto:</b>{' '}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredItems.map((item) => (
+            <Link
+              key={item.id}
+              to={`/experimentos/${item.id}`}
+              className="block rounded-xl border border-[#dadce0] bg-white p-5 hover:border-[#1a73e8] hover:shadow-sm transition"
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span className="font-mono text-xs font-semibold text-[#1a73e8]">
+                    {item.experiment_id}
+                  </span>
+                  <h3 className="text-sm font-medium text-[#202124] mt-0.5">{item.title}</h3>
+                </div>
+
+                <span
+                  className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${corDoEstado(
+                    item.state,
+                  )}`}
+                >
+                  {item.state}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#202124] font-medium">
+                  {item.origin}
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
+                  {item.channel}
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
+                  {item.service}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-xs text-[#5f6368] border-t border-[#f1f3f4] pt-3">
+                <div className="flex justify-between">
+                  <span>Versão do briefing:</span>
+                  <strong className="text-[#202124] font-mono">{item.briefing_version}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>Orçamento previsto:</span>
+                  <strong className="text-[#202124]">
                     {formatarMoeda((item.budget as Record<string, unknown>)?.valor)}
-                  </p>
-                  <p>
-                    <b>Publicação:</b> {item.publication_status || 'não solicitado'} · <b>Gasto:</b>{' '}
-                    {item.spend_status || 'não solicitado'}
-                  </p>
-                  <p>
-                    <b>Responsável:</b> {item.responsible_label || '—'}
-                  </p>
-                </CardContent>
-              </Card>
+                  </strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>Responsável:</span>
+                  <span className="text-[#202124]">{item.responsible_label || '—'}</span>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
-        {!error && items.length === 0 && (
-          <Card>
-            <CardContent className="pt-6 text-slate-600">
-              Nenhum briefing cadastrado ainda.
-            </CardContent>
-          </Card>
+
+        {!error && filteredItems.length === 0 && (
+          <div className="rounded-xl border border-[#dadce0] bg-white p-12 text-center text-xs text-[#5f6368]">
+            Nenhum briefing cadastrado ou correspondente à busca.
+          </div>
         )}
       </div>
     </div>
@@ -344,8 +471,15 @@ export function ExperimentoF2DetailPage() {
         <LoginCard onLogin={() => window.location.reload()} />
       </div>
     )
-  if (error) return <div className="p-6 text-red-700">{error}</div>
-  if (!item) return <div className="p-6">Carregando briefing…</div>
+
+  if (error) return <div className="p-6 text-xs text-[#c5221f]">{error}</div>
+  if (!item)
+    return (
+      <div className="p-6 flex items-center gap-2 text-xs text-[#5f6368]">
+        <RefreshCw className="h-4 w-4 animate-spin text-[#1a73e8]" />
+        <span>Carregando detalhes do briefing…</span>
+      </div>
+    )
 
   const usuario = usuarioAtual()
   const podeAprovar = papelPodeAprovar(usuario?.role)
@@ -388,11 +522,7 @@ export function ExperimentoF2DetailPage() {
       } else if (modal.tipo === 'versao') {
         await criarNovaVersao(item, motivo, {})
       } else if (modal.tipo === 'aprovacao') {
-        await registrarAprovacao(
-          item,
-          'Aprovação de preparação do briefing (F2-T01, massa sintética)',
-          motivo,
-        )
+        await registrarAprovacao(item, 'preparação', motivo)
         if (item.state === 'Em revisão')
           await transicionarEstado(item, 'Aprovado para preparação', motivo)
       } else if (modal.tipo === 'duplicidade') {
@@ -424,342 +554,427 @@ export function ExperimentoF2DetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/experimentos')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl">
+      {/* Back button */}
+      <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/experimentos')}
+          className="h-8 rounded-full text-xs font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] gap-1.5"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Voltar para a lista de briefings
         </Button>
-        {mensagem && (
-          <Card className="border-amber-300 bg-amber-50">
-            <CardContent className="pt-6 text-amber-900">{mensagem}</CardContent>
-          </Card>
+      </div>
+
+      {mensagem && (
+        <div className="rounded-lg border border-[#fef7e0] bg-[#fef7e0] p-3 text-xs text-[#b06000]">
+          {mensagem}
+        </div>
+      )}
+
+      {/* Main Detail Card */}
+      <div className="rounded-xl border border-[#dadce0] bg-white p-5 sm:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#f1f3f4] pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-semibold text-[#1a73e8]">
+                {item.experiment_id}
+              </span>
+              <span className="text-xs text-[#5f6368]">· Versão {item.briefing_version}</span>
+            </div>
+            <h1 className="text-xl font-medium text-[#202124] mt-1">{item.title}</h1>
+          </div>
+
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${corDoEstado(
+              item.state,
+            )}`}
+          >
+            {item.state}
+          </span>
+        </div>
+
+        {/* Status Alerts */}
+        {aprovacaoValida && (
+          <div className="rounded-lg border border-[#ceead6] bg-[#e6f4ea] p-3 text-xs text-[#137333]">
+            Aprovação válida para {item.briefing_version}:{' '}
+            <strong>{aprovacaoValida.approver_label || 'aprovador'}</strong> (
+            {rotuloPapel(aprovacaoValida.role)}) em {formatarData(aprovacaoValida.created)}.
+          </div>
         )}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-500">
-                  {item.experiment_id} · {item.briefing_version}
-                </p>
-                <CardTitle>{item.title}</CardTitle>
-              </div>
-              <Badge className={corDoEstado(item.state)}>{item.state}</Badge>
+
+        {bloqueioAberto && (
+          <div className="rounded-lg border border-[#fad2cf] bg-[#fce8e6] p-3 text-xs text-[#c5221f]">
+            <strong>Bloqueio em aberto:</strong> {bloqueioAberto.reason} · Correção:{' '}
+            {bloqueioAberto.correction_needed}
+          </div>
+        )}
+
+        {/* Autorizações de Execução Box */}
+        <div className="rounded-xl border border-[#dadce0] bg-[#f8f9fa] p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5f6368]">
+            Autorizações de execução
+          </h3>
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="p-2.5 rounded-lg bg-white border border-[#dadce0]">
+              <span className="text-[11px] text-[#5f6368] block">Publicação:</span>
+              <strong className="text-[#202124] capitalize">
+                {item.publication_status || 'não solicitado'}
+              </strong>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {aprovacaoValida && (
-              <p className="text-sm text-emerald-800">
-                Aprovação válida para {item.briefing_version}:{' '}
-                {aprovacaoValida.approver_label || 'aprovador'} ({rotuloPapel(aprovacaoValida.role)}
-                ) em {formatarData(aprovacaoValida.created)}.
-              </p>
-            )}
-            {bloqueioAberto && (
-              <p className="text-sm text-red-800">
-                Bloqueio aberto: {bloqueioAberto.reason} · correção necessária:{' '}
-                {bloqueioAberto.correction_needed}
-              </p>
-            )}
-            <Card className="border-slate-200 bg-slate-50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Autorizações de execução</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Linha titulo="Publicação">
-                    <Badge>{item.publication_status || 'não solicitado'}</Badge>
-                  </Linha>
-                  <Linha titulo="Gasto">
-                    <Badge>{item.spend_status || 'não solicitado'}</Badge>
-                  </Linha>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await solicitarAutorizacao(item, 'publicação')
-                        await carregar()
-                      } catch (e: any) {
-                        setMensagem(e?.message || 'Solicitação de publicação bloqueada.')
-                      }
-                    }}
-                  >
-                    Solicitar publicação
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await solicitarAutorizacao(item, 'gasto')
-                        await carregar()
-                      } catch (e: any) {
-                        setMensagem(e?.message || 'Solicitação de gasto bloqueada.')
-                      }
-                    }}
-                  >
-                    Solicitar gasto
-                  </Button>
-                  {podeAprovar && (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={() => setModal({ tipo: 'aprovar_publicacao' })}
-                      >
-                        Aprovar publicação
-                      </Button>
-                      <Button variant="outline" onClick={() => setModal({ tipo: 'aprovar_gasto' })}>
-                        Aprovar gasto
-                      </Button>
-                    </>
-                  )}
-                  <Button variant="outline" onClick={() => setModal({ tipo: 'duplicidade' })}>
-                    Testar duplicidade
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            <DecisaoMarketingSection
-              experimentId={item.experiment_id}
-              briefingVersion={item.briefing_version}
-              analysisPeriod={item.analysis_period}
-              criteria={criterios}
-            />
-            <div className="flex flex-wrap gap-2">
-              {(TRANSICOES[item.state] || []).map((destino) => (
+            <div className="p-2.5 rounded-lg bg-white border border-[#dadce0]">
+              <span className="text-[11px] text-[#5f6368] block">Gasto de orçamento:</span>
+              <strong className="text-[#202124] capitalize">
+                {item.spend_status || 'não solicitado'}
+              </strong>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#202124] hover:bg-white"
+              onClick={async () => {
+                try {
+                  await solicitarAutorizacao(item, 'publicação')
+                  await carregar()
+                } catch (e: any) {
+                  setMensagem(e?.message || 'Solicitação de publicação bloqueada.')
+                }
+              }}
+            >
+              Solicitar publicação
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#202124] hover:bg-white"
+              onClick={async () => {
+                try {
+                  await solicitarAutorizacao(item, 'gasto')
+                  await carregar()
+                } catch (e: any) {
+                  setMensagem(e?.message || 'Solicitação de gasto bloqueada.')
+                }
+              }}
+            >
+              Solicitar gasto
+            </Button>
+
+            {podeAprovar && (
+              <>
                 <Button
-                  key={destino}
-                  variant={exigeMotivo(destino) ? 'destructive' : 'default'}
-                  onClick={() =>
-                    exigeMotivo(destino)
-                      ? setModal({ tipo: 'transicao', destino })
-                      : void executarTransicao(
-                          destino,
-                          `Transição registrada por ${usuario?.name || 'usuário sintético'}.`,
-                        )
-                  }
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#137333] hover:bg-[#e6f4ea]"
+                  onClick={() => setModal({ tipo: 'aprovar_publicacao' })}
                 >
-                  {destino}
+                  Aprovar publicação
                 </Button>
-              ))}
-              <Button variant="outline" onClick={() => setModal({ tipo: 'versao' })}>
-                Nova versão ({proximaVersao(item.briefing_version)})
-              </Button>
-              {podeAprovar && !aprovacaoValida && (
-                <Button variant="outline" onClick={() => setModal({ tipo: 'aprovacao' })}>
-                  Aprovar preparação
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#137333] hover:bg-[#e6f4ea]"
+                  onClick={() => setModal({ tipo: 'aprovar_gasto' })}
+                >
+                  Aprovar gasto
                 </Button>
-              )}
-              <Button variant="outline" onClick={() => setModal({ tipo: 'bloqueio' })}>
-                Registrar bloqueio
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const abrir = !mostrarHistorico
-                  setMostrarHistorico(abrir)
-                  if (abrir) {
-                    setTimeout(
-                      () =>
-                        historicoRef.current?.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'start',
-                        }),
-                      100,
+              </>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#5f6368] hover:bg-white"
+              onClick={() => setModal({ tipo: 'duplicidade' })}
+            >
+              Testar duplicidade
+            </Button>
+          </div>
+        </div>
+
+        {/* Embedded Section: Marketing Decision */}
+        <DecisaoMarketingSection
+          experimentId={item.experiment_id}
+          briefingVersion={item.briefing_version}
+          analysisPeriod={item.analysis_period}
+          criteria={criterios}
+        />
+
+        {/* Workflow actions */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-[#f1f3f4]">
+          {(TRANSICOES[item.state] || []).map((destino) => (
+            <Button
+              key={destino}
+              size="sm"
+              className={`h-8 rounded-full text-xs font-medium shadow-none ${
+                exigeMotivo(destino)
+                  ? 'bg-[#c5221f] hover:bg-[#a51d1a] text-white'
+                  : 'bg-[#1a73e8] hover:bg-[#1557b0] text-white'
+              }`}
+              onClick={() =>
+                exigeMotivo(destino)
+                  ? setModal({ tipo: 'transicao', destino })
+                  : void executarTransicao(
+                      destino,
+                      `Transição registrada por ${usuario?.name || 'usuário sintético'}.`,
                     )
-                  }
-                }}
-              >
-                <History className="mr-2 h-4 w-4" />
-                Histórico
-              </Button>
-            </div>
-            <Separator />
-            <div className="grid gap-3 md:grid-cols-3">
-              <Linha titulo="Serviço">
-                <TextoOuVazio valor={item.service} />
-              </Linha>
-              <Linha titulo="Origem">
-                <TextoOuVazio valor={item.origin} />
-              </Linha>
-              <Linha titulo="Canal">
-                <TextoOuVazio valor={item.channel} />
-              </Linha>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <Linha titulo="Dono do experimento">
-                <TextoOuVazio valor={item.owner_label} />
-              </Linha>
-              <Linha titulo="Responsável pelo briefing">
-                <TextoOuVazio valor={item.responsible_label} />
-              </Linha>
-              <Linha titulo="Aprovador da preparação">
-                <TextoOuVazio valor={item.approver_label || 'ainda não definido'} />
-              </Linha>
-            </div>
-            <Separator />
-            <div className="grid gap-4 md:grid-cols-2">
-              <Linha titulo="Hipótese — Se">
-                <TextoOuVazio valor={hipotese.se} />
-              </Linha>
-              <Linha titulo="Hipótese — Para">
-                <TextoOuVazio valor={hipotese.para} />
-              </Linha>
-              <Linha titulo="Hipótese — Então">
-                <TextoOuVazio valor={hipotese.entao} />
-              </Linha>
-              <Linha titulo="Hipótese — Porque">
-                <TextoOuVazio valor={hipotese.porque} />
-              </Linha>
+              }
+            >
+              {destino}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#202124] hover:bg-[#f1f3f4]"
+            onClick={() => setModal({ tipo: 'versao' })}
+          >
+            Nova versão ({proximaVersao(item.briefing_version)})
+          </Button>
+
+          {podeAprovar && !aprovacaoValida && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#137333] hover:bg-[#e6f4ea]"
+              onClick={() => setModal({ tipo: 'aprovacao' })}
+            >
+              Aprovar preparação
+            </Button>
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#c5221f] hover:bg-[#fce8e6]"
+            onClick={() => setModal({ tipo: 'bloqueio' })}
+          >
+            Registrar bloqueio
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full text-xs text-[#5f6368] hover:text-[#202124]"
+            onClick={() => {
+              const abrir = !mostrarHistorico
+              setMostrarHistorico(abrir)
+              if (abrir) {
+                setTimeout(
+                  () =>
+                    historicoRef.current?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    }),
+                  100,
+                )
+              }
+            }}
+          >
+            <History className="mr-1.5 h-3.5 w-3.5" />
+            Histórico
+          </Button>
+        </div>
+
+        {/* Detailed Briefing Fields */}
+        <div className="space-y-4 pt-4 border-t border-[#f1f3f4]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Linha titulo="Serviço">
+              <TextoOuVazio valor={item.service} />
+            </Linha>
+            <Linha titulo="Origem">
+              <TextoOuVazio valor={item.origin} />
+            </Linha>
+            <Linha titulo="Canal">
+              <TextoOuVazio valor={item.channel} />
+            </Linha>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#f1f3f4]">
+            <Linha titulo="Dono do experimento">
+              <TextoOuVazio valor={item.owner_label} />
+            </Linha>
+            <Linha titulo="Responsável pelo briefing">
+              <TextoOuVazio valor={item.responsible_label} />
+            </Linha>
+            <Linha titulo="Aprovador da preparação">
+              <TextoOuVazio valor={item.approver_label || 'ainda não definido'} />
+            </Linha>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#f1f3f4]">
+            <Linha titulo="Hipótese — Se">
+              <TextoOuVazio valor={hipotese.se} />
+            </Linha>
+            <Linha titulo="Hipótese — Para">
+              <TextoOuVazio valor={hipotese.para} />
+            </Linha>
+            <Linha titulo="Hipótese — Então">
+              <TextoOuVazio valor={hipotese.entao} />
+            </Linha>
+            <Linha titulo="Hipótese — Porque">
+              <TextoOuVazio valor={hipotese.porque} />
+            </Linha>
+            <div className="sm:col-span-2">
               <Linha titulo="Hipótese — Mediremos por">
                 <ListaOuVazio valor={hipotese.mediremos_por} />
               </Linha>
             </div>
-            <Separator />
-            <div className="grid gap-4 md:grid-cols-2">
-              <Linha titulo="Público — papel">
-                <TextoOuVazio valor={publico.papel} />
-              </Linha>
-              <Linha titulo="Público — empresa">
-                <TextoOuVazio valor={publico.empresa} />
-              </Linha>
-              <Linha titulo="Público — ICP">
-                <TextoOuVazio valor={publico.icp} />
-              </Linha>
-              <Linha titulo="Público — separação">
-                <TextoOuVazio valor={publico.separacao} />
-              </Linha>
-            </div>
-            <Separator />
-            <Linha titulo="Oferta">
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#f1f3f4]">
+            <Linha titulo="Público — Papel">
+              <TextoOuVazio valor={publico.papel} />
+            </Linha>
+            <Linha titulo="Público — Empresa">
+              <TextoOuVazio valor={publico.empresa} />
+            </Linha>
+            <Linha titulo="Público — ICP">
+              <TextoOuVazio valor={publico.icp} />
+            </Linha>
+            <Linha titulo="Público — Separação">
+              <TextoOuVazio valor={publico.separacao} />
+            </Linha>
+          </div>
+
+          <div className="pt-3 border-t border-[#f1f3f4]">
+            <Linha titulo="Descrição da oferta">
               <TextoOuVazio valor={oferta.descricao} />
             </Linha>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Linha titulo="Janela de execução prevista">
-                <p>
-                  {formatarData(janela.inicio)} a {formatarData(janela.fim)}
-                </p>
-              </Linha>
-              <Linha titulo="Período de análise previsto">
-                <TextoOuVazio valor={item.analysis_period} />
-              </Linha>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Linha titulo="Orçamento previsto">
-                <p>
-                  {formatarMoeda(orcamento.valor, String(orcamento.moeda || 'BRL'))} ·{' '}
-                  <TextoOuVazio valor={orcamento.origem} />
-                </p>
-              </Linha>
-              <Linha titulo="Critérios de parada">
-                <ul className="list-disc pl-4">
-                  {CRITERIOS_PARADA.map((c) => (
-                    <li key={c}>
-                      <b>{c}:</b> <TextoOuVazio valor={criterios[c]} />
-                    </li>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#f1f3f4]">
+            <Linha titulo="Janela de execução prevista">
+              <p>
+                {formatarData(janela.inicio)} a {formatarData(janela.fim)}
+              </p>
+            </Linha>
+            <Linha titulo="Período de análise previsto">
+              <TextoOuVazio valor={item.analysis_period} />
+            </Linha>
+            <Linha titulo="Orçamento previsto">
+              <p>
+                {formatarMoeda(orcamento.valor, String(orcamento.moeda || 'BRL'))} ·{' '}
+                <TextoOuVazio valor={orcamento.origem} />
+              </p>
+            </Linha>
+            <Linha titulo="Critérios de parada">
+              <ul className="list-disc pl-4 space-y-0.5">
+                {CRITERIOS_PARADA.map((c) => (
+                  <li key={c}>
+                    <strong>{c}:</strong> <TextoOuVazio valor={criterios[c]} />
+                  </li>
+                ))}
+              </ul>
+            </Linha>
+          </div>
+
+          {/* History Accordion Section */}
+          {mostrarHistorico && (
+            <div className="space-y-4 pt-4 border-t border-[#f1f3f4]" ref={historicoRef}>
+              <h2 className="text-sm font-medium text-[#202124]">Histórico e auditoria</h2>
+
+              <div>
+                <h3 className="text-xs font-semibold text-[#5f6368] mb-2 uppercase tracking-wider">
+                  Versões do briefing
+                </h3>
+                {versoes.length === 0 && (
+                  <p className="text-xs text-[#5f6368]">Nenhuma versão registrada.</p>
+                )}
+                <div className="space-y-2">
+                  {versoes.map((v) => (
+                    <div
+                      key={v.id}
+                      className="rounded-lg border border-[#dadce0] p-3 text-xs bg-[#fafafa]"
+                    >
+                      <strong className="text-[#202124]">{v.version}</strong> ·{' '}
+                      {v.change_summary || '—'}
+                      <div className="text-[11px] text-[#5f6368] mt-1">
+                        Motivo: {v.reason} · Por: {v.actor_label || '—'} · {formatarData(v.created)}{' '}
+                        · Status: {v.approval_status}
+                      </div>
+                    </div>
                   ))}
-                </ul>
-              </Linha>
-            </div>
-            {mostrarHistorico && (
-              <>
-                <Separator />
-                <div className="space-y-4" ref={historicoRef}>
-                  <div>
-                    <h2 className="mb-2 text-lg font-semibold">Versões do briefing</h2>
-                    {versoes.length === 0 && (
-                      <p className="text-sm text-slate-600">Nenhuma versão registrada.</p>
-                    )}
-                    <ul className="space-y-2">
-                      {versoes.map((v) => (
-                        <li key={v.id} className="rounded-md border p-3 text-sm">
-                          <b>{v.version}</b> · {v.change_summary || '—'}
-                          <br />
-                          <span className="text-slate-600">
-                            Motivo: {v.reason} · Por: {v.actor_label || '—'} ·{' '}
-                            {formatarData(v.created)} · {v.approval_status}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h2 className="mb-2 text-lg font-semibold">Aprovações</h2>
-                    {aprovacoes.length === 0 && (
-                      <p className="text-sm text-slate-600">Nenhuma aprovação registrada.</p>
-                    )}
-                    <ul className="space-y-2">
-                      {aprovacoes.map((a) => (
-                        <li key={a.id} className="rounded-md border p-3 text-sm">
-                          <b>{a.briefing_version}</b> · {a.status} · {a.approver_label || '—'} (
-                          {rotuloPapel(a.role)}) · {formatarData(a.created)}
-                          <br />
-                          <span className="text-slate-600">Escopo: {a.scope}</span>
-                          {a.remarks && (
-                            <>
-                              <br />
-                              <span className="text-slate-600">Ressalvas: {a.remarks}</span>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h2 className="mb-2 text-lg font-semibold">Bloqueios</h2>
-                    {bloqueios.length === 0 && (
-                      <p className="text-sm text-slate-600">Nenhum bloqueio registrado.</p>
-                    )}
-                    <ul className="space-y-2">
-                      {bloqueios.map((b) => (
-                        <li key={b.id} className="rounded-md border p-3 text-sm">
-                          <b>{b.status}</b> · {b.reason}
-                          <br />
-                          <span className="text-slate-600">
-                            Regra: {b.affected_rule} · Identificado por: {b.identified_by} ·
-                            Correção: {b.correction_needed} · {formatarData(b.created)}
-                          </span>
-                          {b.status === 'aberto' && podeAprovar && (
-                            <>
-                              <br />
-                              <Button
-                                className="mt-2"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    await resolverBloqueio(b.id, 'resolvido')
-                                    await carregar()
-                                  } catch (e: any) {
-                                    setMensagem(
-                                      e?.message || 'Não foi possível resolver o bloqueio.',
-                                    )
-                                  }
-                                }}
-                              >
-                                Marcar como resolvido
-                              </Button>
-                            </>
-                          )}
-                          {b.status === 'aberto' && !podeAprovar && (
-                            <>
-                              <br />
-                              <span className="text-xs text-slate-500">
-                                Resolução reservada ao Champion ou Delegado formal. Usuário atual:{' '}
-                                {rotuloPapel(usuario?.role)}.
-                              </span>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-semibold text-[#5f6368] mb-2 uppercase tracking-wider">
+                  Aprovações
+                </h3>
+                {aprovacoes.length === 0 && (
+                  <p className="text-xs text-[#5f6368]">Nenhuma aprovação registrada.</p>
+                )}
+                <div className="space-y-2">
+                  {aprovacoes.map((a) => (
+                    <div
+                      key={a.id}
+                      className="rounded-lg border border-[#dadce0] p-3 text-xs bg-[#fafafa]"
+                    >
+                      <strong className="text-[#202124]">{a.briefing_version}</strong> · {a.status}{' '}
+                      · {a.approver_label || '—'} ({rotuloPapel(a.role)}) ·{' '}
+                      {formatarData(a.created)}
+                      <div className="text-[11px] text-[#5f6368] mt-1">Escopo: {a.scope}</div>
+                      {a.remarks && (
+                        <div className="text-[11px] text-[#5f6368]">Ressalvas: {a.remarks}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-semibold text-[#5f6368] mb-2 uppercase tracking-wider">
+                  Bloqueios
+                </h3>
+                {bloqueios.length === 0 && (
+                  <p className="text-xs text-[#5f6368]">Nenhum bloqueio registrado.</p>
+                )}
+                <div className="space-y-2">
+                  {bloqueios.map((b) => (
+                    <div
+                      key={b.id}
+                      className="rounded-lg border border-[#dadce0] p-3 text-xs bg-[#fafafa]"
+                    >
+                      <strong className="text-[#c5221f]">{b.status}</strong> · {b.reason}
+                      <div className="text-[11px] text-[#5f6368] mt-1">
+                        Regra: {b.affected_rule} · Identificado por: {b.identified_by} · Correção:{' '}
+                        {b.correction_needed} · {formatarData(b.created)}
+                      </div>
+                      {b.status === 'aberto' && podeAprovar && (
+                        <Button
+                          className="mt-2 h-7 rounded-full text-xs"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await resolverBloqueio(b.id, 'resolvido')
+                              await carregar()
+                            } catch (e: any) {
+                              setMensagem(e?.message || 'Não foi possível resolver o bloqueio.')
+                            }
+                          }}
+                        >
+                          Marcar como resolvido
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
       {modal && (
         <ModalMotivo
           titulo={
@@ -781,7 +996,9 @@ export function ExperimentoF2DetailPage() {
             modal.tipo === 'transicao'
               ? 'A transição exige motivo registrado no histórico.'
               : modal.tipo === 'versao'
-                ? `O briefing ${item.briefing_version} será preservado e uma nova versão (${proximaVersao(item.briefing_version)}) começará como Rascunho.`
+                ? `O briefing ${item.briefing_version} será preservado e uma nova versão (${proximaVersao(
+                    item.briefing_version,
+                  )}) começará como Rascunho.`
                 : modal.tipo === 'aprovacao'
                   ? 'A aprovação fica vinculada à versão exata do briefing.'
                   : modal.tipo === 'aprovar_publicacao'

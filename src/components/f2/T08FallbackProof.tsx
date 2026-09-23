@@ -75,229 +75,151 @@ export default function T08FallbackProof({
   }
 
   return (
-    <Card className="border-indigo-200 bg-indigo-50/30 shadow-sm">
-      <CardHeader className="border-b border-indigo-100">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="rounded-xl border border-[#dadce0] bg-white p-5 space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#f1f3f4] pb-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8]">
+            <ShieldCheck className="h-4 w-4" /> Prova sintética do fallback manual (F2-T08)
+          </div>
+          <h3 className="mt-1 text-base font-medium text-[#202124]">Lote {T08_BATCH_ID}</h3>
+          <p className="mt-0.5 max-w-3xl text-xs text-[#5f6368]">
+            Esta é uma prova controlada, não uma integração Meta. O lote é 100% sintético,
+            processado em memória e reconciliado usando o mesmo núcleo da T04.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          onClick={executeProof}
+          disabled={disabled || pipeline.length === 0}
+          className="h-8 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium px-4 shadow-none gap-1.5"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Executar prova T08
+        </Button>
+      </div>
+
+      <div className="rounded-lg border border-[#dadce0] bg-[#f8f9fa] p-3.5 text-xs text-[#5f6368] leading-relaxed">
+        <strong className="text-[#202124]">Proteção de escopo GA4:</strong> a prova não chama Meta,
+        não usa token/OAuth, não importa lote externo e não cria, atualiza ou exclui registros em{' '}
+        <code>demandas</code>. Os rótulos 401, 403, 429 e timeout abaixo são eventos
+        injetados/simulados, não respostas reais de uma API.
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-[#fad2cf] bg-[#fce8e6] p-3 text-xs text-[#c5221f]">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-700">
-              <ShieldCheck className="h-4 w-4" /> F2-T08 · prova sintética do fallback manual
-            </div>
-            <CardTitle className="mt-2 text-xl text-slate-950">Lote {T08_BATCH_ID}</CardTitle>
-            <p className="mt-1 max-w-3xl text-sm text-slate-600">
-              Esta é uma prova controlada, não uma integração Meta. O lote é 100% sintético,
-              processado em memória e reconciliado usando o mesmo núcleo da T04.
-            </p>
+            <strong>Falha na prova:</strong> {error}
           </div>
-          <Button
-            onClick={executeProof}
-            disabled={disabled || pipeline.length === 0}
-            className="gap-2"
-          >
-            <ShieldCheck className="h-4 w-4" />
-            Executar prova T08
-          </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-5 p-6">
-        <div className="rounded-lg border border-indigo-200 bg-white p-4 text-sm text-slate-700">
-          <strong>Proteção de escopo:</strong> a prova não chama Meta, não usa token/OAuth, não
-          importa lote externo e não cria, atualiza ou exclui registros em <code>demandas</code>. Os
-          rótulos 401, 403, 429 e timeout abaixo são eventos injetados/simulados, não respostas
-          reais de uma API.
+      )}
+
+      {!proof ? (
+        <div className="rounded-lg border border-dashed border-[#dadce0] bg-[#f8f9fa] p-6 text-center text-xs text-[#5f6368]">
+          Clique em <strong>Executar prova T08</strong> após o carregamento do pipeline para validar
+          classificações, replay idempotente e comportamento seguro em falhas simuladas.
         </div>
-        {error && (
-          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-            <AlertCircle className="mt-0.5 h-4 w-4" />
-            <div>
-              <strong>Falha na prova.</strong>
-              <p className="mt-1">{error}</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="rounded-lg border border-[#dadce0] bg-[#fafafa] p-3 text-xs">
+              <p className="text-[11px] font-medium text-[#5f6368]">Lote</p>
+              <p className="mt-1 font-mono text-xs font-semibold text-[#1a73e8]">
+                {first?.batch.batch_id}
+              </p>
+              <p className="text-[10px] text-[#5f6368] mt-0.5">modo: {first?.batch.source_mode}</p>
+            </div>
+            <div className="rounded-lg border border-[#dadce0] bg-[#fafafa] p-3 text-xs">
+              <p className="text-[11px] font-medium text-[#5f6368]">Linhas sintéticas</p>
+              <p className="mt-1 text-lg font-semibold text-[#202124]">
+                {first?.batch.rows.length}
+              </p>
+              <p className="text-[10px] text-[#5f6368] mt-0.5">sem dados pessoais</p>
+            </div>
+            <div className="rounded-lg border border-[#dadce0] bg-[#fafafa] p-3 text-xs">
+              <p className="text-[11px] font-medium text-[#5f6368]">Pipeline lido</p>
+              <p className="mt-1 text-lg font-semibold text-[#202124]">{pipeline.length}</p>
+              <p className="text-[10px] text-[#5f6368] mt-0.5">somente leitura</p>
+            </div>
+            <div className="rounded-lg border border-[#dadce0] bg-[#fafafa] p-3 text-xs">
+              <p className="text-[11px] font-medium text-[#5f6368]">Ações create</p>
+              <p className="mt-1 text-lg font-semibold text-[#202124]">
+                {first?.actions.filter((action) => action.kind === 'create').length}
+              </p>
+              <p className="text-[10px] text-[#5f6368] mt-0.5">plano em memória</p>
+            </div>
+            <div className="rounded-lg border border-[#dadce0] bg-[#fafafa] p-3 text-xs col-span-2 sm:col-span-1">
+              <p className="text-[11px] font-medium text-[#5f6368]">Estado seguro</p>
+              <p className="mt-1 text-sm font-semibold text-[#202124]">{first?.safeState}</p>
+              <p className="text-[10px] text-[#5f6368] mt-0.5">proteção confirmada</p>
             </div>
           </div>
-        )}
-        {!proof ? (
-          <div className="rounded-lg border border-dashed border-indigo-300 bg-white p-5 text-sm text-slate-600">
-            Clique em <strong>Executar prova T08</strong> depois que o pipeline estiver carregado. O
-            resultado esperado é uma lista de classificações, replay idempotente, conflito de
-            payload e cinco falhas explicitamente simuladas.
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Lote</p>
-                <p className="mt-2 font-mono text-sm font-semibold text-slate-950">
-                  {first?.batch.batch_id}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  source_mode: {first?.batch.source_mode}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Linhas sintéticas
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">
-                  {first?.batch.rows.length}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">sem dados pessoais</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Pipeline lido
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">{pipeline.length}</p>
-                <p className="mt-1 text-xs text-slate-500">somente leitura</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Ações create
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">
-                  {first?.actions.filter((action) => action.kind === 'create').length}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">planejadas, nunca executadas</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Estado seguro
-                </p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">{first?.safeState}</p>
-                <p className="mt-1 text-xs text-slate-500">há inválido/divergente sintético</p>
-              </div>
+
+          {/* TDD Card */}
+          <div className="rounded-lg border border-[#dadce0] bg-white p-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#5f6368] mb-3">
+              TDD da prova T08
+            </h4>
+            <CheckList checks={proof.checks} />
+            <div
+              className={`mt-3 rounded-lg p-2.5 text-xs font-medium ${
+                allChecksPassed
+                  ? 'bg-[#e6f4ea] text-[#137333] border border-[#ceead6]'
+                  : 'bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]'
+              }`}
+            >
+              {allChecksPassed
+                ? 'PASSOU — TDD sintético da F2-T08.'
+                : 'FALHOU — revisar divergência.'}
             </div>
+          </div>
 
-            <Card className="border-slate-200 bg-white shadow-none">
-              <CardHeader>
-                <CardTitle className="text-base">TDD da prova T08</CardTitle>
-                <p className="text-sm font-normal text-slate-500">
-                  Cada linha é uma verificação determinística; nada aqui representa chamada real ao
-                  Meta.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <CheckList checks={proof.checks} />
-                <div
-                  className={
-                    allChecksPassed
-                      ? 'mt-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800'
-                      : 'mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800'
-                  }
-                >
-                  {allChecksPassed
-                    ? 'PASSOU — TDD sintético da F2-T08.'
-                    : 'FALHOU — não avançar para o teste humano.'}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-200 bg-white shadow-none">
-              <CardHeader>
-                <CardTitle className="text-base">Reconciliação do lote manual</CardTitle>
-                <p className="text-sm font-normal text-slate-500">
-                  `record_id` continua restrito ao escopo da fonte declarada; desconhecido não é
-                  inferido.
-                </p>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[980px] text-left text-sm">
-                    <thead className="border-y border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                      <tr>
-                        <th className="px-4 py-3">linha</th>
-                        <th className="px-4 py-3">record_id</th>
-                        <th className="px-4 py-3">classificação</th>
-                        <th className="px-4 py-3">status do núcleo</th>
-                        <th className="px-4 py-3">destino</th>
-                        <th className="px-4 py-3">tratamento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {first?.evaluations.map((row) => (
-                        <tr key={row.sourceRow} className="align-top hover:bg-slate-50">
-                          <td className="px-4 py-3">{row.sourceRow}</td>
-                          <td className="px-4 py-3 font-mono text-xs">
-                            {row.record_id || '(vazio)'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge variant={classificationVariant(row.classification)}>
-                              {classificationLabels[row.classification]}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs">{row.status}</td>
-                          <td className="px-4 py-3">
-                            {row.targetPresent ? 'vinculado' : 'sem correspondência'}
-                          </td>
-                          <td className="max-w-[420px] px-4 py-3 text-xs text-slate-600">
-                            {row.detail}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-5 lg:grid-cols-2">
-              <Card className="border-slate-200 bg-white shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-base">Replay e conflito de batch_id</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <CheckCircle2 className="h-4 w-4" /> Replay idêntico: {proof.replay.status}
-                    </div>
-                    <p className="mt-1 text-xs">{proof.replay.message}</p>
-                  </div>
-                  <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-950">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <ShieldAlert className="h-4 w-4" /> Mesmo batch_id com payload diferente
-                    </div>
-                    <p className="mt-1 text-xs">{proof.changedPayload.message}</p>
-                    <p className="mt-1 text-xs font-semibold">
-                      Estado: {proof.changedPayload.safeState}
-                    </p>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Não há overwrite automático. A divergência exige decisão humana e o lote
-                    original é preservado.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="border-slate-200 bg-white shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-base">Falhas simuladas e retorno seguro</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {proof.failures.map((failure) => (
-                    <div
-                      key={failure.code}
-                      className="flex items-start gap-3 rounded-md border border-slate-200 p-3 text-sm"
-                    >
-                      <ShieldX className="mt-0.5 h-4 w-4 shrink-0 text-slate-600" />
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 font-medium text-slate-900">
-                          <span>{failure.label}</span>
-                          <Badge
-                            variant={failure.safeState === 'bloqueada' ? 'destructive' : 'outline'}
-                          >
-                            {failure.safeState}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          SIMULADO · sem chamada externa · sem retry automático
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600">{failure.detail}</p>
-                      </div>
-                    </div>
+          {/* Table */}
+          <div className="rounded-lg border border-[#dadce0] overflow-hidden">
+            <div className="bg-[#f8f9fa] px-4 py-2.5 border-b border-[#dadce0] text-xs font-medium text-[#202124]">
+              Reconciliação do lote manual
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left text-xs">
+                <thead className="border-b border-[#dadce0] bg-[#f8f9fa] text-[11px] uppercase tracking-wider text-[#5f6368]">
+                  <tr>
+                    <th className="px-4 py-2.5">linha</th>
+                    <th className="px-4 py-2.5">record_id</th>
+                    <th className="px-4 py-2.5">classificação</th>
+                    <th className="px-4 py-2.5">status núcleo</th>
+                    <th className="px-4 py-2.5">destino</th>
+                    <th className="px-4 py-2.5">tratamento</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f1f3f4] text-[#202124]">
+                  {first?.evaluations.map((row) => (
+                    <tr key={row.sourceRow} className="hover:bg-[#f8f9fa]">
+                      <td className="px-4 py-2 text-[#5f6368]">{row.sourceRow}</td>
+                      <td className="px-4 py-2 font-mono text-[11px] text-[#1a73e8]">
+                        {row.record_id || '(vazio)'}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Badge variant={classificationVariant(row.classification)}>
+                          {classificationLabels[row.classification]}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2 font-mono text-[11px] text-[#5f6368]">
+                        {row.status}
+                      </td>
+                      <td className="px-4 py-2 text-[#5f6368]">
+                        {row.targetPresent ? 'vinculado' : 'sem correspondência'}
+                      </td>
+                      <td className="max-w-[420px] px-4 py-2 text-[11px] text-[#5f6368]">
+                        {row.detail}
+                      </td>
+                    </tr>
                   ))}
-                </CardContent>
-              </Card>
+                </tbody>
+              </table>
             </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          </div>
+        </>
+      )}
+    </div>
   )
 }

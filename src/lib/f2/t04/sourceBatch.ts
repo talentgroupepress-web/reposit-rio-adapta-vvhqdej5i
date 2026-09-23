@@ -34,6 +34,7 @@ export type T04Status =
   | 'conflito_no_lote'
   | 'chave_ausente'
   | 'ausente_no_pipeline'
+  | 'conflito_com_destino'
   | 'conflito_com_pipeline'
 
 export type T04ReportRow = {

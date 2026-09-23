@@ -45,6 +45,7 @@ const statusToT04 = (status: CoreReport['rows'][number]['status']): T04ReportRow
   if (status === 'desconhecido_preservado') return 'desconhecido_preservado'
   if (status === 'desconhecido_sem_destino') return 'ausente_no_pipeline'
   if (status === 'ausente_no_destino') return 'ausente_no_pipeline'
+  if (status === 'invalid') return 'chave_ausente'
   return status
 }
 

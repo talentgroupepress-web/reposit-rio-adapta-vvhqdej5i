@@ -20,6 +20,7 @@ export type CoreStatus =
   | 'conflito_no_lote'
   | 'ausente_no_destino'
   | 'conflito_com_destino'
+  | 'invalid'
 
 export type CoreReportRow = {
   recordId: string
