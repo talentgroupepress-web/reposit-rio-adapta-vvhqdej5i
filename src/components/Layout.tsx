@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
   ChevronDown,
@@ -63,8 +63,13 @@ export default function Layout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [property, setProperty] = useState('Adapta · Produção (GA4-BR)')
   const [dateRange, setDateRange] = useState('Últimos 28 dias')
-  const [activeTab, setActiveTab] = useState('relatorios')
   const location = useLocation()
+  const navigate = useNavigate()
+
+  // Fecha o menu móvel ao mudar de rota
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
 
   const properties = [
     { id: '1', name: 'Adapta · Produção (GA4-BR)', account: 'Talent Group Holding' },
@@ -75,9 +80,8 @@ export default function Layout() {
   const navItems = [
     {
       label: 'Relatórios',
-      icon: LineChart,
+      icon: BarChart3,
       to: '/',
-      exact: true,
       badge: 'Principal',
       subtext: 'Pipeline comercial & fontes',
     },
@@ -101,6 +105,34 @@ export default function Layout() {
       to: '/decisoes-f2',
       badge: 'F2-T05',
       subtext: 'Governança & ações',
+    },
+  ]
+
+  // Abas da barra de contexto GA4 mapeadas para rotas e seções
+  const contextTabs = [
+    {
+      id: 'visao-geral',
+      label: 'Visão geral',
+      to: '/',
+      description: 'Métricas gerais e pipeline comercial',
+    },
+    {
+      id: 'aquisicao',
+      label: 'Aquisição',
+      to: '/atribuicao-t04',
+      description: 'Atribuição e canais de entrada',
+    },
+    {
+      id: 'engajamento',
+      label: 'Engajamento',
+      to: '/experimentos',
+      description: 'Testes, hipóteses e briefings F2',
+    },
+    {
+      id: 'monetizacao',
+      label: 'Monetização',
+      to: '/decisoes-f2',
+      description: 'Fila de governança e decisões comerciais',
     },
   ]
 
@@ -139,7 +171,9 @@ export default function Layout() {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <GoogleAnalyticsLogo />
+          <NavLink to="/" title="Ir para a página inicial" className="focus:outline-none">
+            <GoogleAnalyticsLogo />
+          </NavLink>
         </div>
 
         {/* Center: Property Dropdown + GA Search Box */}
@@ -250,52 +284,26 @@ export default function Layout() {
           SUB-HEADER / SELECTOR BAR (Breadcrumbs, tabs, date filter)
          ======================================================== */}
       <div className="sticky top-14 z-30 flex flex-wrap items-center justify-between border-b border-[#dadce0] bg-white px-4 sm:px-6 py-2 gap-3 shadow-[0_1px_1px_rgba(0,0,0,0.03)]">
-        {/* Left: Section tabs like GA4 (Relatórios, Tempo real, etc.) */}
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto text-xs sm:text-sm">
-          <button
-            type="button"
-            onClick={() => setActiveTab('relatorios')}
-            className={`px-3 py-1.5 rounded-full font-medium transition ${
-              activeTab === 'relatorios'
-                ? 'bg-[#e8f0fe] text-[#1a73e8]'
-                : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
-            }`}
-          >
-            Visão geral
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('aquisicao')}
-            className={`px-3 py-1.5 rounded-full font-medium transition ${
-              activeTab === 'aquisicao'
-                ? 'bg-[#e8f0fe] text-[#1a73e8]'
-                : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
-            }`}
-          >
-            Aquisição
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('engajamento')}
-            className={`px-3 py-1.5 rounded-full font-medium transition ${
-              activeTab === 'engajamento'
-                ? 'bg-[#e8f0fe] text-[#1a73e8]'
-                : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
-            }`}
-          >
-            Engajamento
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('monetizacao')}
-            className={`px-3 py-1.5 rounded-full font-medium transition ${
-              activeTab === 'monetizacao'
-                ? 'bg-[#e8f0fe] text-[#1a73e8]'
-                : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
-            }`}
-          >
-            Monetização
-          </button>
+        {/* Left: Section tabs like GA4 (Visão geral, Aquisição, Engajamento, Monetização) */}
+        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto text-xs sm:text-sm py-0.5">
+          {contextTabs.map((tab) => {
+            const isTabActive =
+              tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to)
+            return (
+              <NavLink
+                key={tab.id}
+                to={tab.to}
+                title={tab.description}
+                className={`px-3 py-1.5 rounded-full font-medium transition whitespace-nowrap inline-flex items-center ${
+                  isTabActive
+                    ? 'bg-[#e8f0fe] text-[#1a73e8] font-semibold'
+                    : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
+                }`}
+              >
+                {tab.label}
+              </NavLink>
+            )
+          })}
         </div>
 
         {/* Right: Date Range Selector pill (Classic Google Analytics pill) */}
@@ -403,10 +411,22 @@ export default function Layout() {
             </div>
 
             <div
-              className={`flex items-center gap-3 px-3 py-2 rounded-full text-xs font-medium text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124] cursor-pointer`}
-              title="Administrador"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate('/decisoes-f2')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  navigate('/decisoes-f2')
+                }
+              }}
+              className={`flex items-center gap-3 px-3 py-2 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                location.pathname.startsWith('/decisoes-f2')
+                  ? 'bg-[#e8f0fe] text-[#1a73e8] font-semibold'
+                  : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
+              }`}
+              title="Administração e Governança F2"
             >
-              <Settings className="h-4 w-4 shrink-0 text-[#5f6368]" />
+              <Settings className="h-4 w-4 shrink-0" />
               {sidebarOpen && <span>Administrador</span>}
             </div>
           </div>
@@ -436,7 +456,14 @@ export default function Layout() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-4 border-b border-[#dadce0]">
-                <GoogleAnalyticsLogo />
+                <NavLink
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  title="Ir para a página inicial"
+                  className="focus:outline-none"
+                >
+                  <GoogleAnalyticsLogo />
+                </NavLink>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -462,7 +489,7 @@ export default function Layout() {
                       key={item.to}
                       to={item.to}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-full text-sm font-medium ${
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-full text-sm font-medium transition-colors ${
                         isActive
                           ? 'bg-[#e8f0fe] text-[#1a73e8] font-semibold'
                           : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
@@ -472,12 +499,48 @@ export default function Layout() {
                         <Icon className="h-4 w-4" />
                         <span>{item.label}</span>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium ${
+                          isActive ? 'bg-[#1a73e8] text-white' : 'bg-[#f1f3f4] text-[#5f6368]'
+                        }`}
+                      >
                         {item.badge}
                       </span>
                     </NavLink>
                   )
                 })}
+
+                <div className="pt-4 px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#5f6368]">
+                  Configuração
+                </div>
+
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    navigate('/decisoes-f2')
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setMobileMenuOpen(false)
+                      navigate('/decisoes-f2')
+                    }
+                  }}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                    location.pathname.startsWith('/decisoes-f2')
+                      ? 'bg-[#e8f0fe] text-[#1a73e8] font-semibold'
+                      : 'text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#202124]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Settings className="h-4 w-4" />
+                    <span>Administrador</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
+                    F2
+                  </span>
+                </div>
               </div>
 
               <div className="pt-3 border-t border-[#dadce0] text-xs text-[#5f6368]">
