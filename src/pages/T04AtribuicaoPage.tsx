@@ -29,6 +29,7 @@ import {
   toPipelineRecord,
 } from '@/lib/f2/t04/engine'
 import T08FallbackProof from '@/components/f2/T08FallbackProof'
+import T09IntegratedProof from '@/components/f2/T09IntegratedProof'
 import { GaMetricCard } from '@/components/ga/GaMetricCard'
 import { GaCard } from '@/components/ga/GaCard'
 
@@ -483,6 +484,9 @@ export default function T04AtribuicaoPage() {
 
       {/* Fallback T08 component */}
       <T08FallbackProof pipeline={pipeline} disabled={loading || processing} />
+
+      {/* Prova integrada T09 */}
+      <T09IntegratedProof pipeline={pipeline} disabled={loading || processing} />
     </div>
   )
 }
