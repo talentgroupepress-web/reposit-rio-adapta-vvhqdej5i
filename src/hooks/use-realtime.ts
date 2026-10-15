@@ -13,9 +13,9 @@ import pb from '@/lib/pocketbase/client'
  * `useRealtime<MyRecord>(...)` to get a typed subscription payload
  * instead of `unknown`.
  */
-export function useRealtime<TRecord extends RecordModel = RecordModel>(
+export function useRealtime<TRecord = RecordModel>(
   collectionName: string,
-  callback: (data: RecordSubscription<TRecord>) => void,
+  callback: (data: RecordSubscription<TRecord & RecordModel>) => void,
   enabled: boolean = true,
 ) {
   const callbackRef = useRef(callback)
@@ -27,9 +27,9 @@ export function useRealtime<TRecord extends RecordModel = RecordModel>(
     let unsubscribeFn: (() => Promise<void>) | undefined
     let cancelled = false
 
-    pb.collection<TRecord>(collectionName)
+    pb.collection(collectionName)
       .subscribe('*', (e) => {
-        callbackRef.current(e)
+        callbackRef.current(e as unknown as RecordSubscription<TRecord & RecordModel>)
       })
       .then((fn) => {
         if (cancelled) {
@@ -38,7 +38,10 @@ export function useRealtime<TRecord extends RecordModel = RecordModel>(
           unsubscribeFn = fn
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        // Se realtime falhar (ex: rede ou política), não quebra a interface
+        console.warn(`[useRealtime] Assinatura da coleção ${collectionName} indisponível:`, err)
+      })
 
     return () => {
       cancelled = true

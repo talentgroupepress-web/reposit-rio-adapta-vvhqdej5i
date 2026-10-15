@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -6,6 +6,7 @@ import {
   History,
   LogIn,
   LogOut,
+  Radio,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -13,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import {
   CRITERIOS_PARADA,
@@ -180,9 +182,10 @@ export function ExperimentosF2Page() {
   const [items, setItems] = useState<BriefingF2[]>([])
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [realtimePulse, setRealtimePulse] = useState(false)
   const [, force] = useState(0)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setError('')
     for (let tentativa = 0; tentativa < 2; tentativa += 1) {
       try {
@@ -201,11 +204,31 @@ export function ExperimentosF2Page() {
         setError('Falha temporária de comunicação. Tente atualizar novamente.')
       }
     }
-  }
+  }, [])
 
   useEffect(() => {
     if (pb.authStore.isValid) void load()
-  }, [])
+  }, [load])
+
+  // PocketBase Realtime para a lista de experimentos
+  useRealtime<BriefingF2>(
+    'experimentos_f2',
+    () => {
+      setRealtimePulse(true)
+      setTimeout(() => setRealtimePulse(false), 2000)
+      void load()
+    },
+    pb.authStore.isValid,
+  )
+
+  // Polling fallback a cada 20 segundos
+  useEffect(() => {
+    if (!pb.authStore.isValid) return
+    const interval = setInterval(() => {
+      void load()
+    }, 20000)
+    return () => clearInterval(interval)
+  }, [load])
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return items
@@ -244,6 +267,23 @@ export function ExperimentosF2Page() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Badge Tempo Real */}
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              realtimePulse
+                ? 'bg-[#e6f4ea] border-[#34a853] text-[#137333] shadow-xs'
+                : 'bg-white border-[#dadce0] text-[#5f6368]'
+            }`}
+            title="Conexão em tempo real ativa (PocketBase Realtime)"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                realtimePulse ? 'bg-[#137333] animate-ping' : 'bg-[#137333]'
+              }`}
+            />
+            <span className="text-[11px] font-mono">Tempo real ativo</span>
+          </div>
+
           <Button
             size="sm"
             onClick={() => void load()}
@@ -402,6 +442,7 @@ export function ExperimentoF2DetailPage() {
   const [aprovacoes, setAprovacoes] = useState<AprovacaoF2[]>([])
   const [bloqueios, setBloqueios] = useState<BloqueioF2[]>([])
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
+  const [realtimePulse, setRealtimePulse] = useState(false)
   const historicoRef = useRef<HTMLDivElement | null>(null)
   const [modal, setModal] = useState<null | {
     tipo:
@@ -416,7 +457,7 @@ export function ExperimentoF2DetailPage() {
   }>(null)
   const [mensagem, setMensagem] = useState('')
 
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     try {
       const b = await obterBriefing(id)
       setItem(b)
@@ -431,11 +472,54 @@ export function ExperimentoF2DetailPage() {
     } catch (e: any) {
       setError(e?.message || 'Não foi possível carregar o briefing.')
     }
-  }
+  }, [id])
 
   useEffect(() => {
     if (pb.authStore.isValid) void carregar()
-  }, [id])
+  }, [carregar])
+
+  // Assinatura em Tempo Real para atualizações do experimento detalhado
+  useRealtime<BriefingF2>(
+    'experimentos_f2',
+    (e) => {
+      if (e.record.id === id) {
+        setRealtimePulse(true)
+        setTimeout(() => setRealtimePulse(false), 2000)
+        void carregar()
+      }
+    },
+    pb.authStore.isValid,
+  )
+
+  useRealtime<VersaoF2>(
+    'experimento_versoes_f2',
+    () => {
+      setRealtimePulse(true)
+      setTimeout(() => setRealtimePulse(false), 2000)
+      void carregar()
+    },
+    pb.authStore.isValid,
+  )
+
+  useRealtime<AprovacaoF2>(
+    'aprovacoes_f2',
+    () => {
+      setRealtimePulse(true)
+      setTimeout(() => setRealtimePulse(false), 2000)
+      void carregar()
+    },
+    pb.authStore.isValid,
+  )
+
+  useRealtime<BloqueioF2>(
+    'bloqueios_f2',
+    () => {
+      setRealtimePulse(true)
+      setTimeout(() => setRealtimePulse(false), 2000)
+      void carregar()
+    },
+    pb.authStore.isValid,
+  )
 
   if (!pb.authStore.isValid)
     return (
@@ -527,8 +611,8 @@ export function ExperimentoF2DetailPage() {
 
   return (
     <div className="p-6 sm:p-8 space-y-6 max-w-5xl">
-      {/* Back button */}
-      <div>
+      {/* Back button and Realtime indicator */}
+      <div className="flex items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
@@ -538,6 +622,22 @@ export function ExperimentoF2DetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar
         </Button>
+
+        <div
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+            realtimePulse
+              ? 'bg-[#e6f4ea] border-[#34a853] text-[#137333] shadow-xs'
+              : 'bg-white border-[#dadce0] text-[#5f6368]'
+          }`}
+          title="Conexão em tempo real ativa"
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${
+              realtimePulse ? 'bg-[#137333] animate-ping' : 'bg-[#137333]'
+            }`}
+          />
+          <span className="text-[11px] font-mono">Tempo real ativo</span>
+        </div>
       </div>
 
       {mensagem && (

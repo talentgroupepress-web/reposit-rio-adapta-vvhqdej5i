@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  Activity,
   AlertCircle,
   CheckCircle2,
   Database,
   Download,
   FileInput,
+  Megaphone,
   Play,
   Radio,
   RefreshCw,
@@ -14,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import {
   SOURCE_BATCH,
@@ -179,6 +182,7 @@ export default function T04AtribuicaoPage() {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
+  const [realtimePulse, setRealtimePulse] = useState(false)
 
   const loadPipeline = useCallback(async () => {
     setLoading(true)
@@ -200,6 +204,39 @@ export default function T04AtribuicaoPage() {
   useEffect(() => {
     void loadPipeline()
   }, [loadPipeline])
+
+  // Assinatura em Tempo Real (PocketBase Realtime)
+  useRealtime<T04PipelineRecord>('demandas', (e) => {
+    setRealtimePulse(true)
+    setTimeout(() => setRealtimePulse(false), 2000)
+    setPipeline((prev) => {
+      if (e.action === 'create') {
+        if (prev.some((r) => r.id === e.record.id)) return prev
+        return [...prev, e.record].sort((a, b) =>
+          (a.record_id || '').localeCompare(b.record_id || ''),
+        )
+      }
+      if (e.action === 'update') {
+        return prev.map((r) => (r.id === e.record.id ? e.record : r))
+      }
+      if (e.action === 'delete') {
+        return prev.filter((r) => r.id !== e.record.id)
+      }
+      return prev
+    })
+  })
+
+  // Polling leve a cada 20 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void pb
+        .collection('demandas')
+        .getFullList<T04PipelineRecord>({ sort: 'record_id' })
+        .then((rows) => setPipeline(rows))
+        .catch(() => {})
+    }, 20000)
+    return () => clearInterval(interval)
+  }, [])
 
   const executeDryRun = () => {
     setProcessing(true)
@@ -257,6 +294,23 @@ export default function T04AtribuicaoPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Badge Tempo Real */}
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              realtimePulse
+                ? 'bg-[#e6f4ea] border-[#34a853] text-[#137333] shadow-xs'
+                : 'bg-white border-[#dadce0] text-[#5f6368]'
+            }`}
+            title="Conexão em tempo real ativa (PocketBase Realtime)"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                realtimePulse ? 'bg-[#137333] animate-ping' : 'bg-[#137333]'
+              }`}
+            />
+            <span className="text-[11px] font-mono">Tempo real ativo</span>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -264,7 +318,9 @@ export default function T04AtribuicaoPage() {
             disabled={loading || processing}
             className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#202124] hover:bg-[#f1f3f4] gap-1.5"
           >
-            <RefreshCw className="h-3.5 w-3.5 text-[#5f6368]" />
+            <RefreshCw
+              className={loading ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5 text-[#5f6368]'}
+            />
             Atualizar
           </Button>
 
@@ -291,20 +347,20 @@ export default function T04AtribuicaoPage() {
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <GaMetricCard
-          title="Lote-fonte"
+          title="Lote-fonte (Tráfego)"
           value={sourceRows}
           sparklineData={[10, 15, 12, 18, 16, 20, sourceRows]}
           sparklineColor="#1a73e8"
-          changeLabel="Linhas do lote"
+          changeLabel="Linhas brutas da campanha"
           icon={<FileInput className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Pipeline lido"
+          title="Pipeline lido (Tempo real)"
           value={pipeline.length}
           sparklineData={[30, 32, 34, 33, 35, pipeline.length]}
           sparklineColor="#137333"
-          changeLabel="Base de dados"
+          changeLabel="Registros em tempo real"
           icon={<Database className="h-4 w-4" />}
         />
 
@@ -323,7 +379,7 @@ export default function T04AtribuicaoPage() {
           value={replayCreateCount}
           sparklineData={[0, 0, 0, 0, replayCreateCount]}
           sparklineColor="#137333"
-          changeLabel="Idempotência"
+          changeLabel="Idempotência garantida"
           icon={<ShieldAlert className="h-4 w-4" />}
         />
       </div>

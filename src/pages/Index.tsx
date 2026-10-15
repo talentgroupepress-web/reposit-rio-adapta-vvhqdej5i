@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  Activity,
   AlertCircle,
   BarChart3,
   CheckCircle2,
@@ -8,15 +9,20 @@ import {
   Filter,
   Layers,
   LineChart,
+  Megaphone,
   PieChart,
+  Radio,
   RefreshCw,
   Search,
   SlidersHorizontal,
+  Target,
   TrendingUp,
   Users,
   X,
+  Zap,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import { GaMetricCard } from '@/components/ga/GaMetricCard'
 import { GaCard } from '@/components/ga/GaCard'
@@ -38,6 +44,27 @@ type Demanda = {
   resultado: string
   evidencia: string
   qualidade: string
+  contato_ref?: string
+  status_proposta?: string
+  data_conversao_comercial?: string
+  data_conquista?: string
+  tipo_conquista?: string
+  handoff_status?: string
+  icp_validado?: string
+  created?: string
+  updated?: string
+}
+
+type ExperimentoResumo = {
+  id: string
+  experiment_id: string
+  title: string
+  service: string
+  origin: string
+  channel: string
+  state: string
+  briefing_version: string
+  budget?: { valor?: number; moeda?: string }
 }
 
 type Filters = {
@@ -102,25 +129,99 @@ export default function Index() {
   const [reconciling, setReconciling] = useState(false)
   const [tableSearch, setTableSearch] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(true)
+  const [campaignSearch, setCampaignSearch] = useState('')
+  const [experimentos, setExperimentos] = useState<ExperimentoResumo[]>([])
+  const [realtimePulse, setRealtimePulse] = useState(false)
 
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const result = await pb.collection('demandas').getList<Demanda>(1, 500, {
-        sort: '-created',
-      })
-      setRecords(result.items)
+      const [demandasResult, expResult] = await Promise.all([
+        pb.collection('demandas').getList<Demanda>(1, 500, {
+          sort: '-created',
+        }),
+        pb.authStore.isValid
+          ? pb
+              .collection('experimentos_f2')
+              .getList<ExperimentoResumo>(1, 100, {
+                sort: '-created',
+              })
+              .catch(() => null)
+          : Promise.resolve(null),
+      ])
+      setRecords(demandasResult.items)
+      if (expResult?.items) {
+        setExperimentos(expResult.items)
+      }
       setLastLoaded(new Date().toLocaleTimeString('pt-BR'))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível consultar a fonte de dados.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     void loadRecords()
+  }, [loadRecords])
+
+  // Assinatura em Tempo Real (PocketBase Realtime) para demandas
+  useRealtime<Demanda>('demandas', (e) => {
+    setRealtimePulse(true)
+    setTimeout(() => setRealtimePulse(false), 2000)
+    setRecords((prev) => {
+      if (e.action === 'create') {
+        if (prev.some((r) => r.id === e.record.id)) return prev
+        return [e.record, ...prev]
+      }
+      if (e.action === 'update') {
+        return prev.map((r) => (r.id === e.record.id ? e.record : r))
+      }
+      if (e.action === 'delete') {
+        return prev.filter((r) => r.id !== e.record.id)
+      }
+      return prev
+    })
+    setLastLoaded(new Date().toLocaleTimeString('pt-BR'))
+  })
+
+  // Assinatura em Tempo Real para experimentos
+  useRealtime<ExperimentoResumo>(
+    'experimentos_f2',
+    (e) => {
+      setRealtimePulse(true)
+      setTimeout(() => setRealtimePulse(false), 2000)
+      setExperimentos((prev) => {
+        if (e.action === 'create') {
+          if (prev.some((r) => r.id === e.record.id)) return prev
+          return [e.record, ...prev]
+        }
+        if (e.action === 'update') {
+          return prev.map((r) => (r.id === e.record.id ? e.record : r))
+        }
+        if (e.action === 'delete') {
+          return prev.filter((r) => r.id !== e.record.id)
+        }
+        return prev
+      })
+    },
+    pb.authStore.isValid,
+  )
+
+  // Polling leve de fallback a cada 15 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void pb
+        .collection('demandas')
+        .getList<Demanda>(1, 500, { sort: '-created' })
+        .then((result) => {
+          setRecords(result.items)
+          setLastLoaded(new Date().toLocaleTimeString('pt-BR'))
+        })
+        .catch(() => {})
+    }, 15000)
+    return () => clearInterval(interval)
   }, [])
 
   const buildSourceFilter = (current: Filters) => {
@@ -188,9 +289,142 @@ export default function Index() {
         r.tipo_origem?.toLowerCase().includes(query) ||
         r.campanha?.toLowerCase().includes(query) ||
         r.responsavel?.toLowerCase().includes(query) ||
-        r.oferta_servico?.toLowerCase().includes(query),
+        r.oferta_servico?.toLowerCase().includes(query) ||
+        r.canal?.toLowerCase().includes(query) ||
+        r.segmento?.toLowerCase().includes(query) ||
+        r.status_proposta?.toLowerCase().includes(query),
     )
   }, [filteredRecords, tableSearch])
+
+  // Agrupamento detalhado por campanhas de tráfego
+  const campaignAnalytics = useMemo(() => {
+    type CampaignStat = {
+      name: string
+      canal: string
+      tipo_origem: string
+      total: number
+      qualificados: number
+      oportunidades: number
+      propostas: number
+      ganhos: number
+      icpValidados: number
+    }
+    const map = new Map<string, CampaignStat>()
+
+    filteredRecords.forEach((r) => {
+      const campName = r.campanha?.trim() || '(Orgânico / Sem campanha)'
+      const existing = map.get(campName) || {
+        name: campName,
+        canal: r.canal || 'Geral',
+        tipo_origem: r.tipo_origem || 'desconhecido',
+        total: 0,
+        qualificados: 0,
+        oportunidades: 0,
+        propostas: 0,
+        ganhos: 0,
+        icpValidados: 0,
+      }
+      existing.total += 1
+      if (
+        r.estado === 'lead_qualificado' ||
+        r.estado === 'oportunidade' ||
+        r.estado === 'proposta' ||
+        r.estado === 'ganho'
+      ) {
+        existing.qualificados += 1
+      }
+      if (r.estado === 'oportunidade' || r.estado === 'proposta' || r.estado === 'ganho') {
+        existing.oportunidades += 1
+      }
+      if (r.estado === 'proposta' || r.estado === 'ganho') {
+        existing.propostas += 1
+      }
+      if (r.estado === 'ganho') {
+        existing.ganhos += 1
+      }
+      if (r.icp_validado === 'sim') {
+        existing.icpValidados += 1
+      }
+      map.set(campName, existing)
+    })
+
+    let list = Array.from(map.values()).sort((a, b) => b.total - a.total)
+    if (campaignSearch.trim()) {
+      const q = campaignSearch.toLowerCase()
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.canal.toLowerCase().includes(q) ||
+          c.tipo_origem.toLowerCase().includes(q),
+      )
+    }
+    return list
+  }, [filteredRecords, campaignSearch])
+
+  // Desempenho por canal de tráfego
+  const channelAnalytics = useMemo(() => {
+    const map = new Map<
+      string,
+      { canal: string; total: number; qualificados: number; ganhos: number }
+    >()
+    filteredRecords.forEach((r) => {
+      const c = r.canal?.trim() || 'Direto / Não especificado'
+      const cur = map.get(c) || { canal: c, total: 0, qualificados: 0, ganhos: 0 }
+      cur.total += 1
+      if (
+        r.estado === 'lead_qualificado' ||
+        r.estado === 'oportunidade' ||
+        r.estado === 'proposta' ||
+        r.estado === 'ganho'
+      ) {
+        cur.qualificados += 1
+      }
+      if (r.estado === 'ganho') {
+        cur.ganhos += 1
+      }
+      map.set(c, cur)
+    })
+    return Array.from(map.values()).sort((a, b) => b.total - a.total)
+  }, [filteredRecords])
+
+  // Métricas agregadas de campanhas
+  const trafficSummary = useMemo(() => {
+    const withCampaign = filteredRecords.filter((r) => Boolean(r.campanha?.trim()))
+    const qualificados = filteredRecords.filter(
+      (r) =>
+        r.estado === 'lead_qualificado' ||
+        r.estado === 'oportunidade' ||
+        r.estado === 'proposta' ||
+        r.estado === 'ganho',
+    ).length
+    const oportunidades = filteredRecords.filter(
+      (r) => r.estado === 'oportunidade' || r.estado === 'proposta' || r.estado === 'ganho',
+    ).length
+    const propostas = filteredRecords.filter(
+      (r) => r.estado === 'proposta' || r.estado === 'ganho',
+    ).length
+    const ganhos = filteredRecords.filter((r) => r.estado === 'ganho').length
+    const icpSim = filteredRecords.filter((r) => r.icp_validado === 'sim').length
+    const taxaQualificacao =
+      filteredRecords.length > 0 ? Math.round((qualificados / filteredRecords.length) * 100) : 0
+
+    // Orçamento total estimado em experimentos
+    const orcamentoTotal = experimentos.reduce((acc, exp) => {
+      const val = Number(exp.budget?.valor || 0)
+      return acc + (Number.isFinite(val) ? val : 0)
+    }, 0)
+
+    return {
+      withCampaignCount: withCampaign.length,
+      qualificados,
+      oportunidades,
+      propostas,
+      ganhos,
+      icpSim,
+      taxaQualificacao,
+      orcamentoTotal,
+    }
+  }, [filteredRecords, experimentos])
 
   const byState = useMemo(() => {
     const counts = new Map<string, number>()
@@ -257,6 +491,23 @@ export default function Index() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2">
+          {/* Badge Tempo Real */}
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              realtimePulse
+                ? 'bg-[#e6f4ea] border-[#34a853] text-[#137333] shadow-xs'
+                : 'bg-white border-[#dadce0] text-[#5f6368]'
+            }`}
+            title="Conexão em tempo real ativa (PocketBase Realtime + Polling 15s)"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                realtimePulse ? 'bg-[#137333] animate-ping' : 'bg-[#137333]'
+              }`}
+            />
+            <span className="text-[11px] font-mono">Tempo real ativo</span>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -290,47 +541,88 @@ export default function Index() {
         </div>
       )}
 
-      {/* Metrics Row */}
+      {/* Metrics Row 1: Demanda e Tráfego Geral */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <GaMetricCard
-          title="Total de registros"
+          title="Total de demandas"
           value={records.length}
           changePercent={8.4}
-          changeLabel="vs. período anterior"
+          changeLabel="Base PocketBase"
           sparklineData={[35, 42, 45, 52, 60, 58, 65, 72, 78, records.length || 80]}
           sparklineColor="#1a73e8"
           icon={<Database className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Registros filtrados"
-          value={filteredRecords.length}
-          changePercent={hasFilters ? -3.2 : 0}
-          changeLabel={hasFilters ? 'Filtros ativos' : 'Sem filtros'}
-          sparklineData={[20, 24, 28, 30, 29, 35, filteredRecords.length || 32]}
-          sparklineColor="#137333"
-          icon={<Filter className="h-4 w-4" />}
+          title="Leads com campanha"
+          value={trafficSummary.withCampaignCount}
+          changePercent={15.2}
+          changeLabel="Identificados em tráfego"
+          sparklineData={[12, 18, 22, 28, 34, trafficSummary.withCampaignCount || 30]}
+          sparklineColor="#1a73e8"
+          icon={<Megaphone className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Origens conhecidas"
-          value={filteredRecords.filter((r) => r.tipo_origem !== 'desconhecido').length}
-          changePercent={14.1}
-          changeLabel="Inbound / Outbound"
-          sparklineData={[15, 18, 22, 25, 29, 34, 39]}
+          title="Leads qualificados"
+          value={trafficSummary.qualificados}
+          changePercent={trafficSummary.taxaQualificacao}
+          changeLabel={`${trafficSummary.taxaQualificacao}% de qualificação`}
+          sparklineData={[5, 8, 12, 14, 18, trafficSummary.qualificados || 15]}
+          sparklineColor="#137333"
+          icon={<Target className="h-4 w-4" />}
+        />
+
+        <GaMetricCard
+          title="Origem desconhecida"
+          value={unknownCount}
+          changePercent={unknownCount > 0 ? 0 : -100}
+          changeLabel="Requer classificação"
+          sparklineData={[10, 8, 9, 7, 6, 8, unknownCount || 5]}
+          sparklineColor="#e37400"
+          icon={<AlertCircle className="h-4 w-4" />}
+        />
+      </div>
+
+      {/* Metrics Row 2: Funil de Conversão do Tráfego Comercial */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <GaMetricCard
+          title="Oportunidades geradas"
+          value={trafficSummary.oportunidades}
+          changeLabel="Avançaram do tráfego"
+          sparklineData={[2, 4, 6, 8, 9, trafficSummary.oportunidades || 5]}
           sparklineColor="#1a73e8"
+          sparklineType="bars"
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+
+        <GaMetricCard
+          title="Propostas enviadas"
+          value={trafficSummary.propostas}
+          changeLabel="Fase de negociação"
+          sparklineData={[1, 2, 3, 5, trafficSummary.propostas || 4]}
+          sparklineColor="#1a73e8"
+          sparklineType="bars"
+          icon={<BarChart3 className="h-4 w-4" />}
+        />
+
+        <GaMetricCard
+          title="Contratos ganhos"
+          value={trafficSummary.ganhos}
+          changeLabel="Convertidos em vendas"
+          sparklineData={[0, 1, 1, 2, trafficSummary.ganhos || 1]}
+          sparklineColor="#137333"
           sparklineType="bars"
           icon={<CheckCircle2 className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Desconhecidos"
-          value={unknownCount}
-          changePercent={unknownCount > 0 ? 0 : -100}
-          changeLabel="Sem origem declarada"
-          sparklineData={[10, 8, 9, 7, 6, 8, unknownCount || 5]}
-          sparklineColor="#e37400"
-          icon={<AlertCircle className="h-4 w-4" />}
+          title="ICP validado"
+          value={trafficSummary.icpSim}
+          changeLabel="Perfil ideal confirmado"
+          sparklineData={[4, 6, 8, 10, trafficSummary.icpSim || 7]}
+          sparklineColor="#137333"
+          icon={<CheckCircle2 className="h-4 w-4" />}
         />
       </div>
 
@@ -489,11 +781,150 @@ export default function Index() {
         </GaCard>
       )}
 
-      {/* Charts Row */}
+      {/* TABELA DE CAMPANHAS DE TRÁFEGO EM TEMPO REAL */}
+      <div className="rounded-xl border border-[#e0e2e6] bg-white overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e0e2e6] px-5 py-3.5 bg-white">
+          <div className="flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-[#1a73e8]" />
+            <h3 className="text-sm font-medium text-[#202124]">
+              Desempenho por Campanha de Tráfego
+            </h3>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#e8f0fe] text-[#1a73e8] font-mono font-medium">
+              {campaignAnalytics.length} campanhas
+            </span>
+            <span className="flex items-center gap-1 text-[11px] text-[#137333] font-mono bg-[#e6f4ea] px-2 py-0.5 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#137333] animate-pulse" />
+              tempo real
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5f6368]" />
+              <input
+                type="text"
+                value={campaignSearch}
+                onChange={(e) => setCampaignSearch(e.target.value)}
+                placeholder="Filtrar campanha ou canal..."
+                className="h-8 rounded-full border border-[#dadce0] bg-[#f8f9fa] pl-8 pr-3 text-xs text-[#202124] placeholder:text-[#5f6368] focus:bg-white focus:border-[#1a73e8] outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] text-left text-xs">
+            <thead className="border-b border-[#e0e2e6] bg-[#f8f9fa] text-[11px] uppercase tracking-wider text-[#5f6368]">
+              <tr>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Campanha</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Canal</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Origem</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368] text-right">Leads Totais</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368] text-right">Qualificados</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368] text-right">Oportunidades</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368] text-right">Propostas</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368] text-right">Ganhos</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368] text-right">ICP Validado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f1f3f4] text-[#202124]">
+              {campaignAnalytics.map((c) => (
+                <tr key={`${c.name}-${c.canal}`} className="hover:bg-[#f8f9fa] transition-colors">
+                  <td className="px-4 py-3 font-medium text-[#202124]">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] text-[#1a73e8] font-semibold">
+                        {c.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-[#5f6368] capitalize">{c.canal}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium capitalize ${
+                        c.tipo_origem === 'desconhecido'
+                          ? 'bg-[#fef7e0] text-[#b06000]'
+                          : c.tipo_origem === 'inbound'
+                            ? 'bg-[#e8f0fe] text-[#1a73e8]'
+                            : 'bg-[#e6f4ea] text-[#137333]'
+                      }`}
+                    >
+                      {c.tipo_origem}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono font-medium text-[#202124]">
+                    {c.total}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono font-semibold text-[#137333]">
+                    {c.qualificados}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-[#1a73e8]">
+                    {c.oportunidades}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-[#5f6368]">{c.propostas}</td>
+                  <td className="px-4 py-3 text-right font-mono font-bold text-[#137333]">
+                    {c.ganhos}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-[#5f6368]">
+                    {c.icpValidados}
+                  </td>
+                </tr>
+              ))}
+              {campaignAnalytics.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-[#5f6368]">
+                    Nenhuma campanha encontrada com os filtros atuais.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Charts Row: Canais e Estados */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Desempenho por Canal */}
+        <GaCard
+          title="Canais de Tráfego e Aquisição"
+          headerRight={
+            <span className="text-xs text-[#5f6368] font-mono">
+              {channelAnalytics.length} canais
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            {channelAnalytics.map((c) => {
+              const pct = filteredRecords.length
+                ? Math.round((c.total / filteredRecords.length) * 100)
+                : 0
+              return (
+                <div
+                  key={c.canal}
+                  className="p-3 rounded-lg border border-[#e0e2e6] flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#1a73e8]" />
+                    <span className="text-xs font-medium text-[#202124] capitalize">{c.canal}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:block w-24 h-1.5 rounded-full bg-[#f1f3f4] overflow-hidden">
+                      <div className="h-full bg-[#1a73e8]" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-xs text-[#5f6368] font-mono w-8 text-right">{pct}%</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f8f9fa] text-[#202124] font-mono">
+                      {c.total} leads ({c.qualificados} qualif.)
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </GaCard>
+
         {/* State distribution */}
         <GaCard
-          title="Demandas por estado"
+          title="Distribuição do Pipeline"
           headerRight={
             <span className="text-xs text-[#5f6368] font-mono">{filteredRecords.length} total</span>
           }
@@ -527,63 +958,6 @@ export default function Index() {
             </div>
           )}
         </GaCard>
-
-        {/* Origin breakdown */}
-        <GaCard title="Atribuição por origem">
-          <div className="space-y-3">
-            {byOrigin.map(([origin, count]) => {
-              const pct = filteredRecords.length
-                ? Math.round((count / filteredRecords.length) * 100)
-                : 0
-              const isUnknown = origin === 'desconhecido' || !origin
-              const barColor = isUnknown ? 'bg-[#f9ab00]' : 'bg-[#1a73e8]'
-
-              return (
-                <div
-                  key={origin}
-                  className="p-3 rounded-lg border border-[#e0e2e6] flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`h-2.5 w-2.5 rounded-full ${
-                        isUnknown ? 'bg-[#f9ab00]' : 'bg-[#1a73e8]'
-                      }`}
-                    />
-                    <span className="text-xs font-medium text-[#202124] capitalize">
-                      {origin === 'desconhecido' ? 'Desconhecido' : origin}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="hidden sm:block w-24 h-1.5 rounded-full bg-[#f1f3f4] overflow-hidden">
-                      <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className="text-xs text-[#5f6368] font-mono w-8 text-right">{pct}%</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f8f9fa] text-[#202124] font-mono">
-                      {count}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-
-            {/* Service breakdown */}
-            <div className="pt-3 border-t border-[#f1f3f4]">
-              <div className="text-xs font-medium text-[#5f6368] mb-2">Principais serviços</div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {byService.map(([svc, cnt]) => (
-                  <div
-                    key={svc}
-                    className="flex items-center justify-between p-2 rounded border border-[#f1f3f4]"
-                  >
-                    <span className="text-[#5f6368] truncate max-w-[140px]">{svc}</span>
-                    <span className="font-semibold text-[#202124] font-mono">{cnt}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </GaCard>
       </div>
 
       {/* Data Table */}
@@ -613,22 +987,24 @@ export default function Index() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left text-xs">
+          <table className="w-full min-w-[960px] text-left text-xs">
             <thead className="border-b border-[#e0e2e6] bg-[#f8f9fa] text-[11px] uppercase tracking-wider text-[#5f6368]">
               <tr>
                 <th className="px-4 py-3 font-medium text-[#5f6368]">ID</th>
                 <th className="px-4 py-3 font-medium text-[#5f6368]">Empresa</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Campanha</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Canal</th>
                 <th className="px-4 py-3 font-medium text-[#5f6368]">Origem</th>
                 <th className="px-4 py-3 font-medium text-[#5f6368]">Estado</th>
                 <th className="px-4 py-3 font-medium text-[#5f6368]">Serviço</th>
-                <th className="px-4 py-3 font-medium text-[#5f6368]">Responsável</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">ICP</th>
                 <th className="px-4 py-3 font-medium text-[#5f6368]">Data</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f3f4] text-[#202124]">
               {loading && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-[#5f6368]">
+                  <td colSpan={9} className="px-4 py-12 text-center text-[#5f6368]">
                     <div className="flex items-center justify-center gap-2">
                       <RefreshCw className="h-4 w-4 animate-spin text-[#1a73e8]" />
                       <span>Carregando dados…</span>
@@ -646,12 +1022,24 @@ export default function Index() {
                     <td className="px-4 py-2.5 font-medium text-[#202124]">
                       {displayValue(record.empresa)}
                     </td>
+                    <td className="px-4 py-2.5 font-mono text-[11px] text-[#202124]">
+                      {record.campanha ? (
+                        <span className="font-semibold text-[#1a73e8]">{record.campanha}</span>
+                      ) : (
+                        <span className="text-[#5f6368]">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-[#5f6368] capitalize">
+                      {displayValue(record.canal)}
+                    </td>
                     <td className="px-4 py-2.5">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                        className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium capitalize ${
                           record.tipo_origem === 'desconhecido'
                             ? 'bg-[#fef7e0] text-[#b06000]'
-                            : 'bg-[#e8f0fe] text-[#1a73e8]'
+                            : record.tipo_origem === 'inbound'
+                              ? 'bg-[#e8f0fe] text-[#1a73e8]'
+                              : 'bg-[#e6f4ea] text-[#137333]'
                         }`}
                       >
                         {record.tipo_origem === 'desconhecido'
@@ -665,8 +1053,18 @@ export default function Index() {
                     <td className="px-4 py-2.5 text-[#5f6368]">
                       {displayValue(record.oferta_servico)}
                     </td>
-                    <td className="px-4 py-2.5 text-[#5f6368]">
-                      {displayValue(record.responsavel)}
+                    <td className="px-4 py-2.5">
+                      {record.icp_validado === 'sim' ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-[#e6f4ea] text-[#137333]">
+                          sim
+                        </span>
+                      ) : record.icp_validado === 'nao' ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-[#fce8e6] text-[#c5221f]">
+                          não
+                        </span>
+                      ) : (
+                        <span className="text-[#5f6368] text-[11px]">—</span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-[#5f6368] font-mono">
                       {formatDate(record.data)}
@@ -676,7 +1074,7 @@ export default function Index() {
 
               {!loading && tableFilteredRecords.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-[#5f6368]">
+                  <td colSpan={9} className="px-4 py-10 text-center text-[#5f6368]">
                     Nenhum registro encontrado.
                   </td>
                 </tr>

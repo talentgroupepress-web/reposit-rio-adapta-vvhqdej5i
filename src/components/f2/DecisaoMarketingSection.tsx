@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { RotateCcw, ShieldCheck } from 'lucide-react'
+import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -260,6 +262,18 @@ export function DecisaoMarketingSection({
   useEffect(() => {
     void load()
   }, [load])
+
+  // Assinatura realtime para decisões deste experimento
+  useRealtime<DecisaoF2>(
+    'decisoes_f2',
+    (e) => {
+      if (e.record.experiment_id === experimentId) {
+        void load()
+      }
+    },
+    pb.authStore.isValid,
+  )
+
   const latest = useMemo(
     () => decisions.find((item) => item.status !== 'revogada') || decisions[0],
     [decisions],

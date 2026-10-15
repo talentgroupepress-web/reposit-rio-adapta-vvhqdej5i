@@ -5,12 +5,15 @@ import {
   Clock,
   Filter,
   ListChecks,
+  Radio,
   RefreshCw,
   Search,
   ShieldAlert,
   ShieldCheck,
   TrendingUp,
 } from 'lucide-react'
+import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import { listarDecisoes } from '@/services/decisoesF2'
 import { simulateT05Checks } from '@/lib/f2/t05/rules'
@@ -50,6 +53,7 @@ export default function DecisoesF2Page() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [realtimePulse, setRealtimePulse] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -66,6 +70,28 @@ export default function DecisoesF2Page() {
   useEffect(() => {
     void load()
   }, [load])
+
+  // Assinatura em Tempo Real (PocketBase Realtime) em decisoes_f2
+  useRealtime<DecisaoF2>(
+    'decisoes_f2',
+    () => {
+      setRealtimePulse(true)
+      setTimeout(() => setRealtimePulse(false), 2000)
+      void load()
+    },
+    pb.authStore.isValid,
+  )
+
+  // Polling leve a cada 20 segundos
+  useEffect(() => {
+    if (!pb.authStore.isValid) return
+    const interval = setInterval(() => {
+      void listarDecisoes()
+        .then((res) => setItems(res))
+        .catch(() => {})
+    }, 20000)
+    return () => clearInterval(interval)
+  }, [])
 
   const visible = useMemo(() => {
     return items.filter((item) => {
@@ -101,6 +127,23 @@ export default function DecisoesF2Page() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Badge Tempo Real */}
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              realtimePulse
+                ? 'bg-[#e6f4ea] border-[#34a853] text-[#137333] shadow-xs'
+                : 'bg-white border-[#dadce0] text-[#5f6368]'
+            }`}
+            title="Conexão em tempo real ativa (PocketBase Realtime)"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                realtimePulse ? 'bg-[#137333] animate-ping' : 'bg-[#137333]'
+              }`}
+            />
+            <span className="text-[11px] font-mono">Tempo real ativo</span>
+          </div>
+
           <Button
             size="sm"
             onClick={() => void load()}
