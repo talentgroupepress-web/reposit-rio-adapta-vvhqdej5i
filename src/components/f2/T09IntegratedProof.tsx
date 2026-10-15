@@ -76,16 +76,12 @@ export default function T09IntegratedProof({
   }
 
   return (
-    <div className="rounded-xl border border-[#dadce0] bg-white p-5 space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#f1f3f4] pb-4">
+    <div className="rounded-xl border border-[#e0e2e6] bg-white p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f1f3f4] pb-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8]">
-            <Radio className="h-4 w-4" /> Prova da leitura Meta integrada (F2-T09)
-          </div>
-          <h3 className="mt-1 text-base font-medium text-[#202124]">Lote {T09_BATCH_ID}</h3>
-          <p className="mt-0.5 max-w-3xl text-xs text-[#5f6368]">
-            Leitura real limitada executada em 23/09/2026 (conta TalentGroup_01, 15–21/09, campos do
-            contrato); payload sintético processado em dry-run com o mesmo núcleo da T04/T08.
+          <h3 className="text-sm font-medium text-[#202124]">Prova T09 — Leitura Integrada</h3>
+          <p className="mt-0.5 text-xs text-[#5f6368]">
+            Lote {T09_BATCH_ID} · Validação em dry-run
           </p>
         </div>
         <Button
@@ -95,16 +91,8 @@ export default function T09IntegratedProof({
           className="h-8 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium px-4 shadow-none gap-1.5"
         >
           <ShieldCheck className="h-3.5 w-3.5" />
-          Executar prova T09
+          Executar T09
         </Button>
-      </div>
-
-      <div className="rounded-lg border border-[#dadce0] bg-[#f8f9fa] p-3.5 text-xs text-[#5f6368] leading-relaxed">
-        <strong className="text-[#202124]">Proteção de escopo:</strong> a prova não grava em{' '}
-        <code>demandas</code>, não altera schema, não usa token/segredo no código e não faz chamada
-        Meta a partir desta tela. A leitura real foi executada uma única vez via conector
-        autorizado, com os campos aprovados no gate 3; o lote abaixo é o payload sintético
-        autorizado no gate 5, processado em memória.
       </div>
 
       {error && (

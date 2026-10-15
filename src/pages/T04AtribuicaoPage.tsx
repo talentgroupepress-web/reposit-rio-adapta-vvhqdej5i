@@ -244,24 +244,15 @@ export default function T04AtribuicaoPage() {
   const sourceRows = useMemo(() => SOURCE_BATCH.length, [])
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* ========================================================
-          GA4 PAGE HEADER
-         ======================================================== */}
+    <div className="p-6 sm:p-8 space-y-6 max-w-7xl">
+      {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-[#5f6368]">
-            <span>Tempo real</span>
-            <span>›</span>
-            <span>Atribuição sintética</span>
-            <span>›</span>
-            <span className="text-[#202124] font-medium">Lote-fonte F2-T04</span>
-          </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-normal tracking-tight text-[#202124]">
-            Reconciliação e atribuição T04
+          <h1 className="text-xl sm:text-2xl font-normal tracking-tight text-[#202124]">
+            Reconciliação e atribuição
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm text-[#5f6368]">
-            Simulação em tempo real, idempotente e sem escrita na base de dados
+          <p className="mt-0.5 text-xs text-[#5f6368]">
+            Simulação em tempo real e batimento idempotente
           </p>
         </div>
 
@@ -274,7 +265,7 @@ export default function T04AtribuicaoPage() {
             className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#202124] hover:bg-[#f1f3f4] gap-1.5"
           >
             <RefreshCw className="h-3.5 w-3.5 text-[#5f6368]" />
-            Atualizar pipeline
+            Atualizar
           </Button>
 
           <Button
@@ -286,21 +277,8 @@ export default function T04AtribuicaoPage() {
             <Play
               className={processing ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5 fill-current'}
             />
-            Executar lote sintético
+            Executar teste
           </Button>
-        </div>
-      </div>
-
-      {/* GA4 Notice Box */}
-      <div className="rounded-lg border border-[#dadce0] bg-white p-3.5 flex items-start gap-3 shadow-none">
-        <Radio className="h-4 w-4 text-[#1a73e8] mt-0.5 shrink-0" />
-        <div className="text-xs text-[#5f6368] leading-relaxed">
-          <strong className="text-[#202124] font-medium">
-            Ambiente de teste e prova sintética:
-          </strong>{' '}
-          a fonte é um lote sintético independente; o destino é consultado somente para
-          reconciliação. Esta tela não cria, atualiza ou exclui demandas, não altera schema e não
-          chama serviços externos.
         </div>
       </div>
 
@@ -310,96 +288,56 @@ export default function T04AtribuicaoPage() {
         </div>
       )}
 
-      {/* ========================================================
-          GA4 METRICS ROW
-         ======================================================== */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <GaMetricCard
-          title="Linhas no lote-fonte"
+          title="Lote-fonte"
           value={sourceRows}
           sparklineData={[10, 15, 12, 18, 16, 20, sourceRows]}
           sparklineColor="#1a73e8"
-          changeLabel={`Lote ${T04_BATCH_ID}`}
-          icon={<FileInput className="h-4 w-4 text-[#1a73e8]" />}
-          helpText="Linhas brutas injetadas no lote sintético da T04"
+          changeLabel="Linhas do lote"
+          icon={<FileInput className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Pipeline lido da base"
+          title="Pipeline lido"
           value={pipeline.length}
           sparklineData={[30, 32, 34, 33, 35, pipeline.length]}
           sparklineColor="#137333"
-          changeLabel="Somente leitura da collection"
-          icon={<Database className="h-4 w-4 text-[#137333]" />}
-          helpText="Registros lidos para batimento"
+          changeLabel="Base de dados"
+          icon={<Database className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Criações planejadas (dry-run)"
+          title="Criações planejadas"
           value={createCount}
           sparklineData={[1, 2, 2, 3, createCount || 2]}
           sparklineColor="#e37400"
           sparklineType="bars"
-          changeLabel="Apenas plano em memória"
-          icon={<CheckCircle2 className="h-4 w-4 text-[#e37400]" />}
-          helpText="Registros que seriam criados se fosse aplicado"
+          changeLabel="Dry-run"
+          icon={<CheckCircle2 className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Criações no replay (idempotência)"
+          title="Criações no replay"
           value={replayCreateCount}
           sparklineData={[0, 0, 0, 0, replayCreateCount]}
           sparklineColor="#137333"
-          changeLabel="Esperado: 0 em reprocessamento"
-          icon={<ShieldAlert className="h-4 w-4 text-[#137333]" />}
-          helpText="Garante que uma reexecução não duplica dados"
+          changeLabel="Idempotência"
+          icon={<ShieldAlert className="h-4 w-4" />}
         />
       </div>
 
-      {/* ========================================================
-          GA4 OPERATIONAL PATH
-         ======================================================== */}
-      <GaCard
-        title="Roteiro de execução controlada"
-        subtitle="Fluxo de garantia de integridade do pipeline GA4"
-      >
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-[#e8f0fe] text-[#1a73e8] px-3 py-1 font-medium">
-            1 · Lote-fonte independente
-          </span>
-          <span className="text-[#dadce0]">›</span>
-          <span className="rounded-full bg-[#f1f3f4] text-[#202124] px-3 py-1 font-medium">
-            2 · Dry-run idempotente
-          </span>
-          <span className="text-[#dadce0]">›</span>
-          <span className="rounded-full bg-[#f1f3f4] text-[#202124] px-3 py-1 font-medium">
-            3 · Reprocessamento seguro
-          </span>
-          <span className="text-[#dadce0]">›</span>
-          <span className="rounded-full bg-[#f1f3f4] text-[#202124] px-3 py-1 font-medium">
-            4 · Batimento de chaves
-          </span>
-        </div>
-      </GaCard>
-
-      {/* ========================================================
-          GA4 CHECKS CARD
-         ======================================================== */}
-      <GaCard
-        title="Verificações determinísticas (TDD T04)"
-        subtitle="Conformidade matemática dos dados sem efeito colateral"
-      >
+      {/* Verificações determinísticas Card */}
+      <GaCard title="Verificações determinísticas (T04)">
         <div className="space-y-2">
           {checks.length === 0 ? (
             <p className="text-xs text-[#5f6368] py-4 text-center">
-              Execute o lote sintético acima para rodar a bateria de testes.
+              Execute o teste acima para rodar a auditoria.
             </p>
           ) : (
             checks.map((check) => (
-              <div
-                key={check.id}
-                className="flex items-start gap-2.5 text-xs p-2 rounded-md hover:bg-[#f8f9fa]"
-              >
+              <div key={check.id} className="flex items-start gap-2.5 text-xs p-1.5 rounded">
                 <span
                   className={`mt-0.5 font-bold ${
                     check.passed ? 'text-[#137333]' : 'text-[#c5221f]'
@@ -409,7 +347,7 @@ export default function T04AtribuicaoPage() {
                 </span>
                 <div className="flex-1">
                   <p className="font-medium text-[#202124]">{check.label}</p>
-                  <p className="text-[11px] text-[#5f6368] mt-0.5">{check.detail}</p>
+                  <p className="text-[11px] text-[#5f6368]">{check.detail}</p>
                 </div>
               </div>
             ))
@@ -417,41 +355,26 @@ export default function T04AtribuicaoPage() {
 
           {checks.length > 0 && (
             <div
-              className={`mt-4 rounded-lg p-3 text-xs font-medium ${
-                allChecksPassed
-                  ? 'bg-[#e6f4ea] text-[#137333] border border-[#ceead6]'
-                  : 'bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]'
+              className={`mt-3 rounded-lg p-2.5 text-xs font-medium ${
+                allChecksPassed ? 'bg-[#e6f4ea] text-[#137333]' : 'bg-[#fce8e6] text-[#c5221f]'
               }`}
             >
               {allChecksPassed
-                ? 'PASSOU — todas as verificações determinísticas da T04 foram aprovadas.'
-                : 'FALHOU — divergência detectada nas verificações.'}
+                ? 'Todas as verificações da T04 foram aprovadas com sucesso.'
+                : 'Divergência detectada nas verificações.'}
             </div>
           )}
         </div>
       </GaCard>
 
-      {/* ========================================================
-          REPORTS AND ACTIONS (When generated)
-         ======================================================== */}
+      {/* Reports and actions */}
       {activeReport && (
         <>
-          <div className="rounded-xl border border-[#dadce0] bg-white overflow-hidden shadow-none">
-            <div className="border-b border-[#dadce0] px-4 py-3 bg-white flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 className="text-sm font-medium text-[#202124]">
-                  Relatório Fonte × Pipeline {replayReport ? '(Replay)' : '(Primeira Execução)'}
-                </h3>
-                <p className="text-[11px] text-[#5f6368] mt-0.5">
-                  Baseline F1/F2-T03:{' '}
-                  <strong>
-                    {activeReport.summary.baselineReconciliationPassed ? 'PASSOU' : 'DIVERGÊNCIA'}
-                  </strong>{' '}
-                  · Fonte {activeReport.summary.totalSourceRows} linhas · Chaves:{' '}
-                  {activeReport.summary.uniqueSourceKeys} preenchidas · Duplicidades:{' '}
-                  {activeReport.summary.duplicateGroups}
-                </p>
-              </div>
+          <div className="rounded-xl border border-[#e0e2e6] bg-white overflow-hidden">
+            <div className="border-b border-[#e0e2e6] px-5 py-3.5 bg-white flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-medium text-[#202124]">
+                Relatório {replayReport ? '(Replay)' : '(Execução)'}
+              </h3>
 
               {!replayReport && (
                 <Button
@@ -461,7 +384,7 @@ export default function T04AtribuicaoPage() {
                   className="h-8 rounded-full border border-[#dadce0] bg-white text-xs font-medium text-[#1a73e8] hover:bg-[#f8f9fa] gap-1.5 shadow-none"
                 >
                   <Repeat className="h-3.5 w-3.5" />
-                  Reprocessar mesmo lote (teste de idempotência)
+                  Reprocessar
                 </Button>
               )}
             </div>
@@ -469,12 +392,9 @@ export default function T04AtribuicaoPage() {
             <ReportTable report={activeReport} />
           </div>
 
-          <div className="rounded-xl border border-[#dadce0] bg-white overflow-hidden shadow-none">
-            <div className="border-b border-[#dadce0] px-4 py-3 bg-white">
-              <h3 className="text-sm font-medium text-[#202124]">Ações planejadas — Dry-Run</h3>
-              <p className="text-[11px] text-[#5f6368] mt-0.5">
-                Ações computadas em memória, não aplicadas no banco de dados
-              </p>
+          <div className="rounded-xl border border-[#e0e2e6] bg-white overflow-hidden">
+            <div className="border-b border-[#e0e2e6] px-5 py-3.5 bg-white">
+              <h3 className="text-sm font-medium text-[#202124]">Ações planejadas</h3>
             </div>
 
             <ActionTable actions={replayReport ? replayActions : firstActions} />

@@ -23,30 +23,32 @@ export function GaCard({
 }: GaCardProps) {
   return (
     <div
-      className={`rounded-xl border border-[#dadce0] bg-white shadow-none transition hover:border-[#bdc1c6] ${className}`}
+      className={`rounded-xl border border-[#e0e2e6] bg-white transition hover:border-[#dadce0] ${className}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f1f3f4] px-4 sm:px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f1f3f4] px-5 sm:px-6 py-3.5">
         <div>
           <h3 className="text-sm font-medium text-[#202124]">{title}</h3>
           {subtitle && <p className="text-xs text-[#5f6368] mt-0.5">{subtitle}</p>}
         </div>
-        <div className="flex items-center gap-1">
-          {action}
-          {headerRight}
-          {onRefresh && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] rounded-full"
-              onClick={onRefresh}
-              title="Atualizar card"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
+        {(action || headerRight || onRefresh) && (
+          <div className="flex items-center gap-1">
+            {action}
+            {headerRight}
+            {onRefresh && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] rounded-full"
+                onClick={onRefresh}
+                title="Atualizar"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-5 sm:p-6">{children}</div>
     </div>
   )
 }

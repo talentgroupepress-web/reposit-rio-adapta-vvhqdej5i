@@ -335,56 +335,47 @@ export function DecisaoMarketingSection({
     }
   }
   return (
-    <div className="rounded-xl border border-[#dadce0] bg-white p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3 border-b border-[#f1f3f4] pb-3">
-        <div>
-          <h3 className="text-sm font-medium text-[#202124]">Decisão de Marketing (GA4)</h3>
-          <p className="mt-0.5 text-xs text-[#5f6368]">
-            Registro humano da leitura do experimento e fila da próxima ação.
-          </p>
-        </div>
-        <ShieldCheck className="h-5 w-5 text-[#1a73e8]" />
+    <div className="rounded-xl border border-[#e0e2e6] bg-white p-5 space-y-4">
+      <div className="flex items-center justify-between gap-3 border-b border-[#f1f3f4] pb-3">
+        <h3 className="text-sm font-medium text-[#202124]">Decisão de Marketing</h3>
+        <ShieldCheck className="h-4 w-4 text-[#1a73e8]" />
       </div>
-      <div className="space-y-4">
-        <div className="rounded-lg border border-[#dadce0] bg-[#f8f9fa] p-3 text-xs text-[#5f6368]">
-          <strong className="text-[#202124]">Proteção GA4:</strong> decisão humana; sem publicação,
-          orçamento, automação ou alteração em demandas. Evidência T04 é sintética/manual.
-        </div>
+      <div className="space-y-3">
         {error && (
-          <p className="rounded-lg border border-[#fad2cf] bg-[#fce8e6] p-3 text-xs text-[#c5221f]">
+          <p className="rounded-lg border border-[#fad2cf] bg-[#fce8e6] p-2.5 text-xs text-[#c5221f]">
             {error}
           </p>
         )}
         {message && (
-          <p className="rounded-lg border border-[#ceead6] bg-[#e6f4ea] p-3 text-xs text-[#137333]">
+          <p className="rounded-lg border border-[#ceead6] bg-[#e6f4ea] p-2.5 text-xs text-[#137333]">
             {message}
           </p>
         )}
         {decisions.map((decision) => (
           <div
             key={decision.id || decision.decision_id}
-            className={`rounded-lg border p-3.5 text-xs ${statusClass[decision.status] || 'border-[#dadce0] bg-white'}`}
+            className={`rounded-lg border p-3 text-xs ${statusClass[decision.status] || 'border-[#e0e2e6] bg-white'}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <strong className="font-mono text-[#1a73e8]">{decision.decision_id}</strong> ·{' '}
-                {decision.experiment_id} · {decision.briefing_version}
-              </div>
-              <div className="flex gap-2">
-                <Badge variant="outline">{statusLabels[decision.status]}</Badge>
-                {decision.decision && <Badge>{decisionLabels[decision.decision]}</Badge>}
+              <span className="font-mono font-medium text-[#1a73e8]">{decision.decision_id}</span>
+              <div className="flex gap-1.5">
+                <Badge variant="outline" className="text-[10px]">
+                  {statusLabels[decision.status]}
+                </Badge>
+                {decision.decision && (
+                  <Badge className="text-[10px]">{decisionLabels[decision.decision]}</Badge>
+                )}
               </div>
             </div>
-            <p className="mt-2 text-xs text-[#202124]">
-              {decision.responsible_reading || 'Ainda sem leitura final; permanece pendente.'}
+            <p className="mt-1.5 text-xs text-[#202124]">
+              {decision.responsible_reading || 'Aguardando parecer.'}
             </p>
-            <p className="mt-1 text-[11px] text-[#5f6368]">
-              Evidência: {decision.evidence_ref} · Período: {decision.analysis_period}
-            </p>
-            <p className="mt-1 text-[11px] text-[#5f6368]">
-              Próxima ação: {decision.next_action} · responsável: {decision.next_action_owner} ·
-              prazo: {formatDate(decision.next_action_due)}
-            </p>
+            <div className="mt-2 text-[11px] text-[#5f6368] space-y-0.5">
+              <p>
+                Ação: {decision.next_action} ({decision.next_action_owner})
+              </p>
+              <p>Prazo: {formatDate(decision.next_action_due)}</p>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {decision.status === 'pendente' && (
                 <Button
@@ -414,18 +405,16 @@ export function DecisaoMarketingSection({
                   onClick={() => void createSuccessor(decision)}
                   disabled={busy}
                 >
-                  Criar próxima decisão
+                  Próxima decisão
                 </Button>
               )}
             </div>
           </div>
         ))}
         {decisions.length === 0 && (
-          <p className="text-xs text-[#5f6368]">
-            Nenhuma decisão registrada para este experimento.
-          </p>
+          <p className="text-xs text-[#5f6368] py-2">Nenhuma decisão registrada.</p>
         )}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 pt-1">
           <Button
             variant="outline"
             size="sm"
@@ -433,13 +422,13 @@ export function DecisaoMarketingSection({
             onClick={() => void createPending()}
             disabled={busy}
           >
-            Criar pendência de decisão
+            Nova decisão pendente
           </Button>
           <a
             href="/decisoes-f2"
             className="inline-flex h-8 items-center rounded-full border border-[#dadce0] px-3.5 text-xs font-medium text-[#202124] hover:bg-[#f1f3f4]"
           >
-            Abrir fila de decisões
+            Fila de decisões
           </a>
         </div>
         {formDecision && (

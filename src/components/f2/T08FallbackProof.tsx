@@ -75,16 +75,12 @@ export default function T08FallbackProof({
   }
 
   return (
-    <div className="rounded-xl border border-[#dadce0] bg-white p-5 space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#f1f3f4] pb-4">
+    <div className="rounded-xl border border-[#e0e2e6] bg-white p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f1f3f4] pb-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8]">
-            <ShieldCheck className="h-4 w-4" /> Prova sintética do fallback manual (F2-T08)
-          </div>
-          <h3 className="mt-1 text-base font-medium text-[#202124]">Lote {T08_BATCH_ID}</h3>
-          <p className="mt-0.5 max-w-3xl text-xs text-[#5f6368]">
-            Esta é uma prova controlada, não uma integração Meta. O lote é 100% sintético,
-            processado em memória e reconciliado usando o mesmo núcleo da T04.
+          <h3 className="text-sm font-medium text-[#202124]">Prova T08 — Fallback Manual</h3>
+          <p className="mt-0.5 text-xs text-[#5f6368]">
+            Lote {T08_BATCH_ID} · Reconciliação sintética em memória
           </p>
         </div>
         <Button
@@ -94,15 +90,8 @@ export default function T08FallbackProof({
           className="h-8 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium px-4 shadow-none gap-1.5"
         >
           <ShieldCheck className="h-3.5 w-3.5" />
-          Executar prova T08
+          Executar T08
         </Button>
-      </div>
-
-      <div className="rounded-lg border border-[#dadce0] bg-[#f8f9fa] p-3.5 text-xs text-[#5f6368] leading-relaxed">
-        <strong className="text-[#202124]">Proteção de escopo GA4:</strong> a prova não chama Meta,
-        não usa token/OAuth, não importa lote externo e não cria, atualiza ou exclui registros em{' '}
-        <code>demandas</code>. Os rótulos 401, 403, 429 e timeout abaixo são eventos
-        injetados/simulados, não respostas reais de uma API.
       </div>
 
       {error && (

@@ -90,25 +90,14 @@ export default function DecisoesF2Page() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* ========================================================
-          GA4 PAGE HEADER
-         ======================================================== */}
+    <div className="p-6 sm:p-8 space-y-6 max-w-7xl">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-[#5f6368]">
-            <span>Publicidade</span>
-            <span>›</span>
-            <span>Atribuição & Decisões</span>
-            <span>›</span>
-            <span className="text-[#202124] font-medium">Governança F2-T05</span>
-          </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-normal tracking-tight text-[#202124]">
-            Fila de decisões de marketing
+          <h1 className="text-xl sm:text-2xl font-normal tracking-tight text-[#202124]">
+            Decisões
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm text-[#5f6368]">
-            Decisões humanas, auditoria e controle de próximas ações com evidência sintética
-          </p>
+          <p className="mt-0.5 text-xs text-[#5f6368]">Fila de governança e próximas ações</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -119,19 +108,8 @@ export default function DecisoesF2Page() {
             className="h-8 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium px-4 shadow-none gap-1.5"
           >
             <RefreshCw className={loading ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} />
-            Atualizar fila
+            Atualizar
           </Button>
-        </div>
-      </div>
-
-      {/* GA4 Notice Box */}
-      <div className="rounded-lg border border-[#dadce0] bg-white p-3.5 flex items-start gap-3 shadow-none">
-        <ShieldCheck className="h-4 w-4 text-[#1a73e8] mt-0.5 shrink-0" />
-        <div className="text-xs text-[#5f6368] leading-relaxed">
-          <strong className="text-[#202124] font-medium">Proteção de escopo GA4:</strong> esta fila
-          não publica campanhas, não altera orçamento, não decide automaticamente e não cria vínculo
-          estrutural com a collection <code>demandas</code>. A evidência T04 aparece somente como
-          snapshot sintético/manual.
         </div>
       </div>
 
@@ -141,109 +119,97 @@ export default function DecisoesF2Page() {
         </div>
       )}
 
-      {/* ========================================================
-          GA4 METRICS ROW
-         ======================================================== */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <GaMetricCard
-          title="Decisões pendentes"
+          title="Pendentes"
           value={counts.pendente}
           sparklineData={[3, 4, 2, 5, 3, counts.pendente || 4]}
           sparklineColor="#e37400"
           sparklineType="bars"
-          changeLabel="Aguardando validação humana"
-          icon={<Clock className="h-4 w-4 text-[#e37400]" />}
-          helpText="Decisões aguardando avaliação pelo Champion ou Delegado"
+          changeLabel="Aguardando validação"
+          icon={<Clock className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Decisões registradas"
+          title="Registradas"
           value={counts.registrada}
           sparklineData={[10, 12, 15, 18, 20, counts.registrada || 22]}
           sparklineColor="#137333"
           changePercent={12.5}
-          changeLabel="Com evidência validada"
-          icon={<CheckCircle2 className="h-4 w-4 text-[#137333]" />}
-          helpText="Decisões com parecer humano e justificativa arquivada"
+          changeLabel="Validadas"
+          icon={<CheckCircle2 className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Decisões revogadas"
+          title="Revogadas"
           value={counts.revogada}
           sparklineData={[1, 1, 2, 2, 1, counts.revogada || 1]}
           sparklineColor="#5f6368"
-          changeLabel="Histórico preservado"
-          icon={<ListChecks className="h-4 w-4 text-[#5f6368]" />}
-          helpText="Decisões que foram ajustadas sem remoção de registros anteriores"
+          changeLabel="Preservadas"
+          icon={<ListChecks className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Próximas ações atrasadas"
+          title="Atrasadas"
           value={counts.atrasadas}
           sparklineData={[0, 1, 0, 1, counts.atrasadas || 0]}
           sparklineColor="#c5221f"
           changePercent={counts.atrasadas > 0 ? 100 : 0}
-          changeLabel="Prazo de execução expirado"
-          icon={<ShieldAlert className="h-4 w-4 text-[#c5221f]" />}
-          helpText="Ações cujo prazo limite configurado já foi ultrapassado"
+          changeLabel="Prazo expirado"
+          icon={<ShieldAlert className="h-4 w-4" />}
         />
       </div>
 
-      {/* ========================================================
-          GA4 QUEUE LIST CARD
-         ======================================================== */}
-      <div className="rounded-xl border border-[#dadce0] bg-white overflow-hidden shadow-none">
+      {/* Queue List Card */}
+      <div className="rounded-xl border border-[#e0e2e6] bg-white overflow-hidden">
         {/* Header Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dadce0] px-4 py-3 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e0e2e6] px-5 py-3.5 bg-white">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-[#202124]">
-              Decisões humanas e próximas ações
-            </h3>
+            <h3 className="text-sm font-medium text-[#202124]">Fila de ações</h3>
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368] font-mono">
               {visible.length}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Search */}
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5f6368]" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por ID, dono ou ação..."
+                placeholder="Buscar..."
                 className="h-8 rounded-full border border-[#dadce0] bg-[#f8f9fa] pl-8 pr-3 text-xs text-[#202124] placeholder:text-[#5f6368] focus:bg-white focus:border-[#1a73e8] outline-none"
               />
             </div>
 
-            {/* Filter Dropdown */}
             <select
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
               className="h-8 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#202124] outline-none focus:border-[#1a73e8]"
             >
-              <option value="todos">Todos os status</option>
+              <option value="todos">Todos</option>
               <option value="pendente">Pendentes</option>
               <option value="registrada">Registradas</option>
               <option value="revogada">Revogadas</option>
-              <option value="atrasadas">Ações atrasadas</option>
+              <option value="atrasadas">Atrasadas</option>
             </select>
           </div>
         </div>
 
         {/* Content list */}
-        <div className="p-4 sm:p-5 space-y-3">
+        <div className="p-5 space-y-3">
           {loading && (
-            <div className="flex items-center justify-center py-12 text-xs text-[#5f6368] gap-2">
+            <div className="flex items-center justify-center py-10 text-xs text-[#5f6368] gap-2">
               <RefreshCw className="h-4 w-4 animate-spin text-[#1a73e8]" />
-              <span>Carregando fila de decisões do Analytics…</span>
+              <span>Carregando…</span>
             </div>
           )}
 
           {!loading && visible.length === 0 && (
             <div className="text-center py-10 text-xs text-[#5f6368]">
-              Nenhuma decisão encontrada nesta seleção.
+              Nenhuma decisão encontrada.
             </div>
           )}
 
@@ -253,7 +219,7 @@ export default function DecisoesF2Page() {
               return (
                 <div
                   key={item.id || item.decision_id}
-                  className="rounded-lg border border-[#dadce0] p-4 bg-white hover:border-[#1a73e8]/50 hover:bg-[#fafafa] transition"
+                  className="rounded-lg border border-[#e0e2e6] p-4 bg-white hover:border-[#dadce0] transition"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
@@ -261,13 +227,13 @@ export default function DecisoesF2Page() {
                         {item.decision_id}
                       </span>
                       <span className="text-xs text-[#5f6368]">
-                        {item.experiment_id} · {item.briefing_version}
+                        {item.experiment_id} · v{item.briefing_version}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
+                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           item.status === 'pendente'
                             ? 'bg-[#fef7e0] text-[#b06000]'
                             : item.status === 'registrada'
@@ -279,13 +245,13 @@ export default function DecisoesF2Page() {
                       </span>
 
                       {item.decision && (
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#e8f0fe] text-[#1a73e8]">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#e8f0fe] text-[#1a73e8]">
                           {decisionLabels[item.decision]}
                         </span>
                       )}
 
                       {overdue && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#fce8e6] text-[#c5221f]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#fce8e6] text-[#c5221f]">
                           <ShieldAlert className="h-3 w-3" />
                           Atrasada
                         </span>
@@ -293,23 +259,18 @@ export default function DecisoesF2Page() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#202124] leading-relaxed mb-2 font-medium">
-                    {item.next_action}
-                  </p>
+                  <p className="text-xs text-[#202124] mb-2 font-medium">{item.next_action}</p>
 
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#f1f3f4] text-[11px] text-[#5f6368]">
                     <div>
-                      Responsável:{' '}
-                      <strong className="text-[#202124]">{item.next_action_owner}</strong> · Prazo:{' '}
-                      <span className="font-mono">{formatDate(item.next_action_due)}</span> ·
-                      Evidência: <span className="font-mono">{item.evidence_ref}</span>
+                      {item.next_action_owner} · {formatDate(item.next_action_due)}
                     </div>
 
                     <a
                       href={`/experimentos/${item.experiment_id}`}
-                      className="font-medium text-[#1a73e8] hover:underline inline-flex items-center gap-1"
+                      className="font-medium text-[#1a73e8] hover:underline"
                     >
-                      Abrir experimento ›
+                      Ver experimento ›
                     </a>
                   </div>
                 </div>
@@ -318,19 +279,11 @@ export default function DecisoesF2Page() {
         </div>
       </div>
 
-      {/* ========================================================
-          TDD DETERMINÍSTICO CARD (GA4 Style)
-         ======================================================== */}
-      <GaCard
-        title="TDD determinístico da T05"
-        subtitle="RED/GREEN/rollback em massa sintética; nenhuma prova chama serviço externo"
-      >
+      {/* TDD Card */}
+      <GaCard title="Verificações determinísticas (T05)">
         <div className="space-y-2">
           {tddChecks.map((check) => (
-            <div
-              key={check.id}
-              className="flex items-start gap-2.5 text-xs p-2 rounded-md hover:bg-[#f8f9fa]"
-            >
+            <div key={check.id} className="flex items-start gap-2.5 text-xs p-1.5 rounded">
               <span
                 className={`mt-0.5 font-bold ${check.passed ? 'text-[#137333]' : 'text-[#c5221f]'}`}
               >
@@ -338,7 +291,7 @@ export default function DecisoesF2Page() {
               </span>
               <div className="flex-1">
                 <p className="font-medium text-[#202124]">{check.label}</p>
-                <p className="text-[11px] text-[#5f6368] mt-0.5">{check.detail}</p>
+                <p className="text-[11px] text-[#5f6368]">{check.detail}</p>
               </div>
             </div>
           ))}

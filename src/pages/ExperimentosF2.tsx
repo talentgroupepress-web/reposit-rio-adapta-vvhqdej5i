@@ -71,26 +71,22 @@ function LoginCard({ onLogin }: { onLogin: () => void }) {
     }
   }
   return (
-    <div className="rounded-xl border border-[#dadce0] bg-white p-6 shadow-none max-w-md mx-auto">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="h-2 w-2 rounded-full bg-[#1a73e8]" />
-        <h2 className="text-base font-medium text-[#202124]">
-          Acesso de validação Google Analytics
-        </h2>
+    <div className="rounded-xl border border-[#e0e2e6] bg-white p-6 max-w-sm mx-auto text-center space-y-4">
+      <div>
+        <h2 className="text-base font-medium text-[#202124]">Acesso aos experimentos</h2>
+        <p className="text-xs text-[#5f6368] mt-1">
+          Entre com o usuário de validação para gerenciar os briefings.
+        </p>
       </div>
-      <p className="text-xs text-[#5f6368] mb-4 leading-relaxed">
-        Use o usuário de validação para gerenciar os briefings de experimentos. Nenhum dado do mundo
-        real é consumido.
-      </p>
       <Button
         onClick={login}
         disabled={busy}
         className="w-full h-9 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none gap-2"
       >
         <LogIn className="h-4 w-4" />
-        {busy ? 'Autenticando…' : 'Entrar como usuário sintético'}
+        {busy ? 'Entrando…' : 'Entrar'}
       </Button>
-      {error && <p className="mt-3 text-xs text-[#c5221f]">{error}</p>}
+      {error && <p className="text-xs text-[#c5221f]">{error}</p>}
     </div>
   )
 }
@@ -237,25 +233,14 @@ export function ExperimentosF2Page() {
     )
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* ========================================================
-          GA4 PAGE HEADER
-         ======================================================== */}
+    <div className="p-6 sm:p-8 space-y-6 max-w-7xl">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-[#5f6368]">
-            <span>Explorar</span>
-            <span>›</span>
-            <span>Fase 2 Marketing</span>
-            <span>›</span>
-            <span className="text-[#202124] font-medium">Briefings de experimentos</span>
-          </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-normal tracking-tight text-[#202124]">
-            Exploração de experimentos (F2-T01)
+          <h1 className="text-xl sm:text-2xl font-normal tracking-tight text-[#202124]">
+            Experimentos
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm text-[#5f6368]">
-            Definição de hipóteses, públicos e critérios de validação controlados
-          </p>
+          <p className="mt-0.5 text-xs text-[#5f6368]">Briefings, hipóteses e validações</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -283,61 +268,48 @@ export function ExperimentosF2Page() {
         </div>
       </div>
 
-      {/* GA4 Notice Box */}
-      <div className="rounded-lg border border-[#dadce0] bg-white p-3.5 flex items-start gap-3 shadow-none">
-        <ShieldCheck className="h-4 w-4 text-[#137333] mt-0.5 shrink-0" />
-        <div className="text-xs text-[#5f6368] leading-relaxed">
-          <strong className="text-[#202124] font-medium">Proteção operacional GA4:</strong> este
-          módulo não usa a collection <code>demandas</code>, não publica campanhas reais, não gasta
-          orçamento e não realiza chamadas a RD Station, 1CRM ou Meta.
-        </div>
-      </div>
-
       {error && (
         <div className="rounded-lg border border-[#fce8e6] bg-[#fdf2f2] p-3 text-xs text-[#c5221f]">
           {error}
         </div>
       )}
 
-      {/* Metric Cards Row */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <GaMetricCard
           title="Total de briefings"
           value={items.length}
           sparklineData={[1, 2, 2, 3, 3, items.length || 3]}
           sparklineColor="#1a73e8"
-          changeLabel="Versões gerenciadas"
-          icon={<Compass className="h-4 w-4 text-[#1a73e8]" />}
-          helpText="Total de briefings cadastrados no experimento"
+          changeLabel="Cadastrados"
+          icon={<Compass className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Em preparação/revisão"
+          title="Ativos"
           value={items.filter((i) => i.state !== 'Arquivado').length}
           sparklineData={[2, 2, 3, 2, 3]}
           sparklineColor="#137333"
-          changeLabel="Ativos no fluxo"
-          icon={<ShieldCheck className="h-4 w-4 text-[#137333]" />}
+          changeLabel="Em fluxo"
+          icon={<ShieldCheck className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Sintéticos controlados"
+          title="Controlados"
           value={items.filter((i) => i.synthetic_only).length}
           sparklineData={[1, 2, 2, 3]}
           sparklineColor="#e37400"
           sparklineType="bars"
-          changeLabel="Sem risco externo"
-          icon={<RefreshCw className="h-4 w-4 text-[#e37400]" />}
+          changeLabel="Ambiente de teste"
+          icon={<RefreshCw className="h-4 w-4" />}
         />
       </div>
 
-      {/* ========================================================
-          GA4 BRIEFINGS GRID
-         ======================================================== */}
+      {/* Briefings Grid */}
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-medium text-[#202124]">Briefings cadastrados</h2>
+            <h2 className="text-sm font-medium text-[#202124]">Briefings</h2>
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368] font-mono">
               {filteredItems.length}
             </span>
@@ -349,7 +321,7 @@ export function ExperimentosF2Page() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Pesquisar por título, canal ou serviço..."
+              placeholder="Pesquisar..."
               className="h-8 rounded-full border border-[#dadce0] bg-white pl-8 pr-3 text-xs text-[#202124] placeholder:text-[#5f6368] focus:border-[#1a73e8] outline-none"
             />
           </div>
@@ -360,7 +332,7 @@ export function ExperimentosF2Page() {
             <Link
               key={item.id}
               to={`/experimentos/${item.id}`}
-              className="block rounded-xl border border-[#dadce0] bg-white p-5 hover:border-[#1a73e8] hover:shadow-sm transition"
+              className="block rounded-xl border border-[#e0e2e6] bg-white p-5 hover:border-[#1a73e8] transition"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
@@ -393,14 +365,14 @@ export function ExperimentosF2Page() {
 
               <div className="space-y-1 text-xs text-[#5f6368] border-t border-[#f1f3f4] pt-3">
                 <div className="flex justify-between">
-                  <span>Versão do briefing:</span>
-                  <strong className="text-[#202124] font-mono">{item.briefing_version}</strong>
+                  <span>Versão:</span>
+                  <span className="text-[#202124] font-mono">{item.briefing_version}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Orçamento previsto:</span>
-                  <strong className="text-[#202124]">
+                  <span>Orçamento:</span>
+                  <span className="text-[#202124]">
                     {formatarMoeda((item.budget as Record<string, unknown>)?.valor)}
-                  </strong>
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Responsável:</span>
@@ -412,8 +384,8 @@ export function ExperimentosF2Page() {
         </div>
 
         {!error && filteredItems.length === 0 && (
-          <div className="rounded-xl border border-[#dadce0] bg-white p-12 text-center text-xs text-[#5f6368]">
-            Nenhum briefing cadastrado ou correspondente à busca.
+          <div className="rounded-xl border border-[#e0e2e6] bg-white p-10 text-center text-xs text-[#5f6368]">
+            Nenhum briefing encontrado.
           </div>
         )}
       </div>
@@ -554,7 +526,7 @@ export function ExperimentoF2DetailPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl">
+    <div className="p-6 sm:p-8 space-y-6 max-w-5xl">
       {/* Back button */}
       <div>
         <Button
@@ -564,7 +536,7 @@ export function ExperimentoF2DetailPage() {
           className="h-8 rounded-full text-xs font-medium text-[#5f6368] hover:text-[#202124] hover:bg-[#f1f3f4] gap-1.5"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Voltar para a lista de briefings
+          Voltar
         </Button>
       </div>
 
@@ -575,7 +547,7 @@ export function ExperimentoF2DetailPage() {
       )}
 
       {/* Main Detail Card */}
-      <div className="rounded-xl border border-[#dadce0] bg-white p-5 sm:p-6 space-y-6">
+      <div className="rounded-xl border border-[#e0e2e6] bg-white p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#f1f3f4] pb-4">
           <div>
@@ -583,9 +555,9 @@ export function ExperimentoF2DetailPage() {
               <span className="font-mono text-xs font-semibold text-[#1a73e8]">
                 {item.experiment_id}
               </span>
-              <span className="text-xs text-[#5f6368]">· Versão {item.briefing_version}</span>
+              <span className="text-xs text-[#5f6368]">· v{item.briefing_version}</span>
             </div>
-            <h1 className="text-xl font-medium text-[#202124] mt-1">{item.title}</h1>
+            <h1 className="text-xl font-normal text-[#202124] mt-1">{item.title}</h1>
           </div>
 
           <span
@@ -600,37 +572,33 @@ export function ExperimentoF2DetailPage() {
         {/* Status Alerts */}
         {aprovacaoValida && (
           <div className="rounded-lg border border-[#ceead6] bg-[#e6f4ea] p-3 text-xs text-[#137333]">
-            Aprovação válida para {item.briefing_version}:{' '}
-            <strong>{aprovacaoValida.approver_label || 'aprovador'}</strong> (
-            {rotuloPapel(aprovacaoValida.role)}) em {formatarData(aprovacaoValida.created)}.
+            Aprovado por {aprovacaoValida.approver_label || 'aprovador'} em{' '}
+            {formatarData(aprovacaoValida.created)}.
           </div>
         )}
 
         {bloqueioAberto && (
           <div className="rounded-lg border border-[#fad2cf] bg-[#fce8e6] p-3 text-xs text-[#c5221f]">
-            <strong>Bloqueio em aberto:</strong> {bloqueioAberto.reason} · Correção:{' '}
-            {bloqueioAberto.correction_needed}
+            <strong>Bloqueio:</strong> {bloqueioAberto.reason} · {bloqueioAberto.correction_needed}
           </div>
         )}
 
-        {/* Autorizações de Execução Box */}
-        <div className="rounded-xl border border-[#dadce0] bg-[#f8f9fa] p-4 space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5f6368]">
-            Autorizações de execução
-          </h3>
+        {/* Autorizações Box */}
+        <div className="rounded-xl border border-[#e0e2e6] bg-[#fafafa] p-4 space-y-3">
+          <h3 className="text-xs font-medium text-[#5f6368]">Autorizações</h3>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-2.5 rounded-lg bg-white border border-[#dadce0]">
-              <span className="text-[11px] text-[#5f6368] block">Publicação:</span>
-              <strong className="text-[#202124] capitalize">
+            <div className="p-2.5 rounded-lg bg-white border border-[#e0e2e6]">
+              <span className="text-[11px] text-[#5f6368] block">Publicação</span>
+              <span className="text-[#202124] font-medium capitalize">
                 {item.publication_status || 'não solicitado'}
-              </strong>
+              </span>
             </div>
-            <div className="p-2.5 rounded-lg bg-white border border-[#dadce0]">
-              <span className="text-[11px] text-[#5f6368] block">Gasto de orçamento:</span>
-              <strong className="text-[#202124] capitalize">
+            <div className="p-2.5 rounded-lg bg-white border border-[#e0e2e6]">
+              <span className="text-[11px] text-[#5f6368] block">Orçamento</span>
+              <span className="text-[#202124] font-medium capitalize">
                 {item.spend_status || 'não solicitado'}
-              </strong>
+              </span>
             </div>
           </div>
 
@@ -802,11 +770,11 @@ export function ExperimentoF2DetailPage() {
             <Linha titulo="Dono do experimento">
               <TextoOuVazio valor={item.owner_label} />
             </Linha>
-            <Linha titulo="Responsável pelo briefing">
+            <Linha titulo="Responsável">
               <TextoOuVazio valor={item.responsible_label} />
             </Linha>
-            <Linha titulo="Aprovador da preparação">
-              <TextoOuVazio valor={item.approver_label || 'ainda não definido'} />
+            <Linha titulo="Aprovador">
+              <TextoOuVazio valor={item.approver_label || 'não definido'} />
             </Linha>
           </div>
 
@@ -824,7 +792,7 @@ export function ExperimentoF2DetailPage() {
               <TextoOuVazio valor={hipotese.porque} />
             </Linha>
             <div className="sm:col-span-2">
-              <Linha titulo="Hipótese — Mediremos por">
+              <Linha titulo="Métricas">
                 <ListaOuVazio valor={hipotese.mediremos_por} />
               </Linha>
             </div>
@@ -846,21 +814,21 @@ export function ExperimentoF2DetailPage() {
           </div>
 
           <div className="pt-3 border-t border-[#f1f3f4]">
-            <Linha titulo="Descrição da oferta">
+            <Linha titulo="Oferta">
               <TextoOuVazio valor={oferta.descricao} />
             </Linha>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#f1f3f4]">
-            <Linha titulo="Janela de execução prevista">
+            <Linha titulo="Janela prevista">
               <p>
                 {formatarData(janela.inicio)} a {formatarData(janela.fim)}
               </p>
             </Linha>
-            <Linha titulo="Período de análise previsto">
+            <Linha titulo="Período de análise">
               <TextoOuVazio valor={item.analysis_period} />
             </Linha>
-            <Linha titulo="Orçamento previsto">
+            <Linha titulo="Orçamento">
               <p>
                 {formatarMoeda(orcamento.valor, String(orcamento.moeda || 'BRL'))} ·{' '}
                 <TextoOuVazio valor={orcamento.origem} />
@@ -880,12 +848,10 @@ export function ExperimentoF2DetailPage() {
           {/* History Accordion Section */}
           {mostrarHistorico && (
             <div className="space-y-4 pt-4 border-t border-[#f1f3f4]" ref={historicoRef}>
-              <h2 className="text-sm font-medium text-[#202124]">Histórico e auditoria</h2>
+              <h2 className="text-sm font-medium text-[#202124]">Histórico</h2>
 
               <div>
-                <h3 className="text-xs font-semibold text-[#5f6368] mb-2 uppercase tracking-wider">
-                  Versões do briefing
-                </h3>
+                <h3 className="text-xs font-medium text-[#5f6368] mb-2">Versões</h3>
                 {versoes.length === 0 && (
                   <p className="text-xs text-[#5f6368]">Nenhuma versão registrada.</p>
                 )}
@@ -893,7 +859,7 @@ export function ExperimentoF2DetailPage() {
                   {versoes.map((v) => (
                     <div
                       key={v.id}
-                      className="rounded-lg border border-[#dadce0] p-3 text-xs bg-[#fafafa]"
+                      className="rounded-lg border border-[#e0e2e6] p-3 text-xs bg-[#fafafa]"
                     >
                       <strong className="text-[#202124]">{v.version}</strong> ·{' '}
                       {v.change_summary || '—'}
@@ -907,9 +873,7 @@ export function ExperimentoF2DetailPage() {
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-[#5f6368] mb-2 uppercase tracking-wider">
-                  Aprovações
-                </h3>
+                <h3 className="text-xs font-medium text-[#5f6368] mb-2">Aprovações</h3>
                 {aprovacoes.length === 0 && (
                   <p className="text-xs text-[#5f6368]">Nenhuma aprovação registrada.</p>
                 )}
@@ -917,7 +881,7 @@ export function ExperimentoF2DetailPage() {
                   {aprovacoes.map((a) => (
                     <div
                       key={a.id}
-                      className="rounded-lg border border-[#dadce0] p-3 text-xs bg-[#fafafa]"
+                      className="rounded-lg border border-[#e0e2e6] p-3 text-xs bg-[#fafafa]"
                     >
                       <strong className="text-[#202124]">{a.briefing_version}</strong> · {a.status}{' '}
                       · {a.approver_label || '—'} ({rotuloPapel(a.role)}) ·{' '}
@@ -932,9 +896,7 @@ export function ExperimentoF2DetailPage() {
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-[#5f6368] mb-2 uppercase tracking-wider">
-                  Bloqueios
-                </h3>
+                <h3 className="text-xs font-medium text-[#5f6368] mb-2">Bloqueios</h3>
                 {bloqueios.length === 0 && (
                   <p className="text-xs text-[#5f6368]">Nenhum bloqueio registrado.</p>
                 )}
@@ -942,11 +904,11 @@ export function ExperimentoF2DetailPage() {
                   {bloqueios.map((b) => (
                     <div
                       key={b.id}
-                      className="rounded-lg border border-[#dadce0] p-3 text-xs bg-[#fafafa]"
+                      className="rounded-lg border border-[#e0e2e6] p-3 text-xs bg-[#fafafa]"
                     >
                       <strong className="text-[#c5221f]">{b.status}</strong> · {b.reason}
                       <div className="text-[11px] text-[#5f6368] mt-1">
-                        Regra: {b.affected_rule} · Identificado por: {b.identified_by} · Correção:{' '}
+                        Regra: {b.affected_rule} · Por: {b.identified_by} · Correção:{' '}
                         {b.correction_needed} · {formatarData(b.created)}
                       </div>
                       {b.status === 'aberto' && podeAprovar && (

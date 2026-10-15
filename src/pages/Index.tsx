@@ -243,28 +243,19 @@ export default function Index() {
     reconciliationReady && filteredIds.every((id, index) => id === reconciledIds[index])
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* ========================================================
-          GA4 PAGE HEADER
-         ======================================================== */}
+    <div className="p-6 sm:p-8 space-y-6 max-w-7xl">
+      {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-[#5f6368]">
-            <span>Relatórios</span>
-            <span>›</span>
-            <span>Ciclo de vida</span>
-            <span>›</span>
-            <span className="text-[#202124] font-medium">Pipeline comercial</span>
-          </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-normal tracking-tight text-[#202124]">
-            Visão geral dos relatórios
+          <h1 className="text-xl sm:text-2xl font-normal tracking-tight text-[#202124]">
+            Visão geral
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm text-[#5f6368]">
-            Métricas de pipeline comercial, origens e estados das demandas em tempo real
+          <p className="mt-0.5 text-xs text-[#5f6368]">
+            Pipeline comercial e distribuição de demandas
           </p>
         </div>
 
-        {/* Action buttons (GA4 Pill Buttons) */}
+        {/* Action buttons */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -273,8 +264,8 @@ export default function Index() {
             className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#202124] hover:bg-[#f1f3f4] gap-1.5"
           >
             <SlidersHorizontal className="h-3.5 w-3.5 text-[#5f6368]" />
-            {filtersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
-            {hasFilters && <span className="h-2 w-2 rounded-full bg-[#1a73e8]" />}
+            {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
+            {hasFilters && <span className="h-1.5 w-1.5 rounded-full bg-[#1a73e8]" />}
           </Button>
 
           <Button
@@ -284,79 +275,69 @@ export default function Index() {
             className="h-8 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium px-4 shadow-none gap-1.5"
           >
             <RefreshCw className={loading ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} />
-            Atualizar fonte
+            Atualizar
           </Button>
         </div>
       </div>
 
-      {/* Error notification if any */}
       {error && (
-        <div className="flex items-start gap-3 rounded-lg border border-[#fce8e6] bg-[#fdf2f2] p-4 text-xs sm:text-sm text-[#c5221f]">
+        <div className="flex items-start gap-3 rounded-lg border border-[#fce8e6] bg-[#fdf2f2] p-4 text-xs text-[#c5221f]">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#c5221f]" />
           <div>
-            <strong className="font-medium">Falha na consulta da fonte Google Analytics</strong>
+            <strong className="font-medium">Erro ao carregar dados</strong>
             <p className="mt-0.5 text-xs text-[#c5221f]/90">{error}</p>
           </div>
         </div>
       )}
 
-      {/* ========================================================
-          GA4 SCORECARDS / METRICS ROW
-         ======================================================== */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <GaMetricCard
-          title="Total de registros na fonte"
+          title="Total de registros"
           value={records.length}
           changePercent={8.4}
-          changeLabel="vs. últimos 28 dias"
+          changeLabel="vs. período anterior"
           sparklineData={[35, 42, 45, 52, 60, 58, 65, 72, 78, records.length || 80]}
           sparklineColor="#1a73e8"
-          icon={<Database className="h-4 w-4 text-[#1a73e8]" />}
-          helpText="Total bruto na collection PocketBase demandas"
+          icon={<Database className="h-4 w-4" />}
         />
 
         <GaMetricCard
           title="Registros filtrados"
           value={filteredRecords.length}
           changePercent={hasFilters ? -3.2 : 0}
-          changeLabel={hasFilters ? 'Filtros ativos' : 'Sem filtros aplicados'}
+          changeLabel={hasFilters ? 'Filtros ativos' : 'Sem filtros'}
           sparklineData={[20, 24, 28, 30, 29, 35, filteredRecords.length || 32]}
           sparklineColor="#137333"
-          icon={<Filter className="h-4 w-4 text-[#137333]" />}
-          helpText="Demandas correspondentes aos critérios de filtro selecionados"
+          icon={<Filter className="h-4 w-4" />}
         />
 
         <GaMetricCard
           title="Origens conhecidas"
           value={filteredRecords.filter((r) => r.tipo_origem !== 'desconhecido').length}
           changePercent={14.1}
-          changeLabel="Inbound + Outbound"
+          changeLabel="Inbound / Outbound"
           sparklineData={[15, 18, 22, 25, 29, 34, 39]}
           sparklineColor="#1a73e8"
           sparklineType="bars"
-          icon={<CheckCircle2 className="h-4 w-4 text-[#1a73e8]" />}
-          helpText="Registros com canal e atribuição identificados"
+          icon={<CheckCircle2 className="h-4 w-4" />}
         />
 
         <GaMetricCard
-          title="Desconhecidos preservados"
+          title="Desconhecidos"
           value={unknownCount}
           changePercent={unknownCount > 0 ? 0 : -100}
-          changeLabel="Sem inferência forçada"
+          changeLabel="Sem origem declarada"
           sparklineData={[10, 8, 9, 7, 6, 8, unknownCount || 5]}
           sparklineColor="#e37400"
-          icon={<AlertCircle className="h-4 w-4 text-[#e37400]" />}
-          helpText="Registros sem origem declarada mantidos estritamente como desconhecido"
+          icon={<AlertCircle className="h-4 w-4" />}
         />
       </div>
 
-      {/* ========================================================
-          GA4 COMPARISON BAR / FILTERS PANEL
-         ======================================================== */}
+      {/* Filters Panel */}
       {filtersOpen && (
         <GaCard
-          title="Filtros de reconciliação e segmentação"
-          subtitle="Cada seleção recalcula a visão mantendo a integridade com a collection de origem"
+          title="Filtros"
           action={
             hasFilters ? (
               <Button
@@ -365,7 +346,7 @@ export default function Index() {
                 onClick={() => setFilters(emptyFilters)}
                 className="h-7 text-xs text-[#1a73e8] hover:bg-[#e8f0fe] rounded-full"
               >
-                Limpar filtros
+                Limpar
               </Button>
             ) : null
           }
@@ -508,48 +489,35 @@ export default function Index() {
         </GaCard>
       )}
 
-      {/* ========================================================
-          GA4 CHARTS ROW (State breakdown & Origin breakdown)
-         ======================================================== */}
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* State distribution (GA4 style horizontal bar chart) */}
+        {/* State distribution */}
         <GaCard
-          title="Demandas por estado no funil"
-          subtitle="Distribuição percentual com base na seleção ativa"
+          title="Demandas por estado"
           headerRight={
-            <span className="text-[11px] text-[#5f6368] font-mono">
-              {filteredRecords.length} total
-            </span>
+            <span className="text-xs text-[#5f6368] font-mono">{filteredRecords.length} total</span>
           }
         >
           {byState.length === 0 ? (
-            <p className="text-xs text-[#5f6368] py-8 text-center">
-              Nenhum registro para os filtros selecionados.
-            </p>
+            <p className="text-xs text-[#5f6368] py-8 text-center">Nenhum registro encontrado.</p>
           ) : (
-            <div className="space-y-3.5">
-              {byState.map(([state, count], idx) => {
+            <div className="space-y-3">
+              {byState.map(([state, count]) => {
                 const pct = filteredRecords.length
                   ? Math.round((count / filteredRecords.length) * 100)
                   : 0
                 return (
-                  <div key={state} className="group">
+                  <div key={state}>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-medium text-[#202124] flex items-center gap-1.5">
-                        <span className="text-[11px] text-[#5f6368] font-mono w-4">{idx + 1}.</span>
-                        {labels[state] || state}
-                      </span>
+                      <span className="font-medium text-[#202124]">{labels[state] || state}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-[#5f6368]">{pct}%</span>
-                        <strong className="font-semibold text-[#202124] w-8 text-right font-mono">
-                          {count}
-                        </strong>
+                        <span className="font-semibold text-[#202124] font-mono">{count}</span>
                       </div>
                     </div>
-                    {/* GA4 style blue progress bar */}
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-[#f1f3f4]">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#f1f3f4]">
                       <div
-                        className="h-full rounded-full bg-[#1a73e8] transition-all duration-300 group-hover:bg-[#1557b0]"
+                        className="h-full rounded-full bg-[#1a73e8]"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -560,12 +528,8 @@ export default function Index() {
           )}
         </GaCard>
 
-        {/* Origin breakdown (GA4 style Cards with pill bars) */}
-        <GaCard
-          title="Atribuição por tipo de origem"
-          subtitle="Inbound, Outbound e registros mantidos em Desconhecido"
-          headerRight={<span className="text-[11px] text-[#5f6368]">Origem primária</span>}
-        >
+        {/* Origin breakdown */}
+        <GaCard title="Atribuição por origem">
           <div className="space-y-3">
             {byOrigin.map(([origin, count]) => {
               const pct = filteredRecords.length
@@ -577,30 +541,25 @@ export default function Index() {
               return (
                 <div
                   key={origin}
-                  className="p-3 rounded-lg border border-[#dadce0] bg-[#fafafa] flex items-center justify-between"
+                  className="p-3 rounded-lg border border-[#e0e2e6] flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     <div
-                      className={`h-3 w-3 rounded-full ${
+                      className={`h-2.5 w-2.5 rounded-full ${
                         isUnknown ? 'bg-[#f9ab00]' : 'bg-[#1a73e8]'
                       }`}
                     />
-                    <div>
-                      <div className="text-xs font-medium text-[#202124] capitalize">
-                        {origin === 'desconhecido' ? 'Desconhecido' : origin}
-                      </div>
-                      <div className="text-[11px] text-[#5f6368]">
-                        {isUnknown ? 'Mantido em categoria própria' : 'Rastreabilidade confirmada'}
-                      </div>
-                    </div>
+                    <span className="text-xs font-medium text-[#202124] capitalize">
+                      {origin === 'desconhecido' ? 'Desconhecido' : origin}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <div className="hidden sm:block w-24 h-1.5 rounded-full bg-[#e8eaed] overflow-hidden">
+                    <div className="hidden sm:block w-24 h-1.5 rounded-full bg-[#f1f3f4] overflow-hidden">
                       <div className={`h-full ${barColor}`} style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="text-xs text-[#5f6368] font-mono w-10 text-right">{pct}%</span>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white border border-[#dadce0] text-[#202124] font-mono">
+                    <span className="text-xs text-[#5f6368] font-mono w-8 text-right">{pct}%</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f8f9fa] text-[#202124] font-mono">
                       {count}
                     </span>
                   </div>
@@ -608,16 +567,14 @@ export default function Index() {
               )
             })}
 
-            {/* Service breakdown mini-table */}
-            <div className="pt-2 border-t border-[#f1f3f4]">
-              <div className="text-[11px] uppercase tracking-wider font-semibold text-[#5f6368] mb-2">
-                Top ofertas de serviços
-              </div>
+            {/* Service breakdown */}
+            <div className="pt-3 border-t border-[#f1f3f4]">
+              <div className="text-xs font-medium text-[#5f6368] mb-2">Principais serviços</div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {byService.map(([svc, cnt]) => (
                   <div
                     key={svc}
-                    className="flex items-center justify-between p-2 rounded bg-white border border-[#f1f3f4]"
+                    className="flex items-center justify-between p-2 rounded border border-[#f1f3f4]"
                   >
                     <span className="text-[#5f6368] truncate max-w-[140px]">{svc}</span>
                     <span className="font-semibold text-[#202124] font-mono">{cnt}</span>
@@ -629,65 +586,52 @@ export default function Index() {
         </GaCard>
       </div>
 
-      {/* ========================================================
-          GA4 DATA TABLE (Google Analytics standard data grid)
-         ======================================================== */}
-      <div className="rounded-xl border border-[#dadce0] bg-white overflow-hidden shadow-none">
-        {/* Table Top Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dadce0] px-4 py-3 bg-white">
+      {/* Data Table */}
+      <div className="rounded-xl border border-[#e0e2e6] bg-white overflow-hidden">
+        {/* Table Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e0e2e6] px-5 py-3.5 bg-white">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-[#202124]">Registros da fonte (record_id)</h3>
+            <h3 className="text-sm font-medium text-[#202124]">Registros</h3>
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368] font-mono">
               {tableFilteredRecords.length}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Search filter within table */}
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5f6368]" />
               <input
                 type="text"
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
-                placeholder="Filtrar nesta tabela..."
+                placeholder="Filtrar tabela..."
                 className="h-8 rounded-full border border-[#dadce0] bg-[#f8f9fa] pl-8 pr-3 text-xs text-[#202124] placeholder:text-[#5f6368] focus:bg-white focus:border-[#1a73e8] outline-none"
               />
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.print()}
-              className="h-8 rounded-full border-[#dadce0] text-xs font-medium text-[#5f6368] hover:text-[#202124] gap-1"
-            >
-              <Download className="h-3 w-3" />
-              <span className="hidden sm:inline">Exportar</span>
-            </Button>
           </div>
         </div>
 
-        {/* The Grid Table */}
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-xs">
-            <thead className="border-b border-[#dadce0] bg-[#f8f9fa] text-[11px] uppercase tracking-wider text-[#5f6368]">
+          <table className="w-full min-w-[800px] text-left text-xs">
+            <thead className="border-b border-[#e0e2e6] bg-[#f8f9fa] text-[11px] uppercase tracking-wider text-[#5f6368]">
               <tr>
-                <th className="px-4 py-3 font-semibold text-[#202124]">record_id</th>
-                <th className="px-4 py-3 font-semibold text-[#202124]">Empresa</th>
-                <th className="px-4 py-3 font-semibold text-[#202124]">Origem</th>
-                <th className="px-4 py-3 font-semibold text-[#202124]">Estado</th>
-                <th className="px-4 py-3 font-semibold text-[#202124]">Serviço</th>
-                <th className="px-4 py-3 font-semibold text-[#202124]">Responsável</th>
-                <th className="px-4 py-3 font-semibold text-[#202124]">Data</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">ID</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Empresa</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Origem</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Estado</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Serviço</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Responsável</th>
+                <th className="px-4 py-3 font-medium text-[#5f6368]">Data</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f3f4] text-[#202124]">
               {loading && (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-[#5f6368]">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="h-5 w-5 animate-spin text-[#1a73e8]" />
-                      <span>Consultando dados da collection Google Analytics / demandas…</span>
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin text-[#1a73e8]" />
+                      <span>Carregando dados…</span>
                     </div>
                   </td>
                 </tr>
@@ -695,7 +639,7 @@ export default function Index() {
 
               {!loading &&
                 tableFilteredRecords.map((record) => (
-                  <tr key={record.id} className="hover:bg-[#f8f9fa] transition-colors duration-100">
+                  <tr key={record.id} className="hover:bg-[#f8f9fa] transition-colors">
                     <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[11px] text-[#1a73e8] font-medium">
                       {record.record_id}
                     </td>
@@ -732,8 +676,8 @@ export default function Index() {
 
               {!loading && tableFilteredRecords.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-[#5f6368]">
-                    Nenhum registro corresponde aos filtros selecionados.
+                  <td colSpan={7} className="px-4 py-10 text-center text-[#5f6368]">
+                    Nenhum registro encontrado.
                   </td>
                 </tr>
               )}
@@ -741,36 +685,14 @@ export default function Index() {
           </table>
         </div>
 
-        {/* Footer info & reconciliation check */}
-        <div className="border-t border-[#dadce0] bg-[#f8f9fa] px-4 py-3 flex flex-wrap items-center justify-between text-[11px] text-[#5f6368] gap-2">
+        {/* Footer info */}
+        <div className="border-t border-[#e0e2e6] bg-[#f8f9fa] px-5 py-2.5 flex items-center justify-between text-[11px] text-[#5f6368]">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-2 w-2 rounded-full bg-[#137333]" />
-            <span>
-              Reconciliação: Painel <strong>{filteredRecords.length}</strong> · Fonte{' '}
-              <strong>{sourceIds.length}</strong> · Diferença:{' '}
-              <strong>
-                {reconciliationReady ? filteredRecords.length - sourceIds.length : 'apurando'}
-              </strong>
-            </span>
-            <span>·</span>
-            <span
-              className={`font-medium ${
-                reconciliationPassed
-                  ? 'text-[#137333]'
-                  : reconciling
-                    ? 'text-[#1a73e8]'
-                    : 'text-[#c5221f]'
-              }`}
-            >
-              {reconciliationPassed
-                ? 'PASSOU (IDs coincidem)'
-                : reconciling
-                  ? 'Consultando fonte…'
-                  : 'Divergência'}
-            </span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[#137333]" />
+            <span>{filteredRecords.length} registros exibidos</span>
           </div>
 
-          <div>Fonte consultada às {lastLoaded || '—'} · Modo somente leitura</div>
+          <div>{lastLoaded ? `Atualizado às ${lastLoaded}` : ''}</div>
         </div>
       </div>
     </div>
