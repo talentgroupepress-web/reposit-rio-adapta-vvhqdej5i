@@ -36,15 +36,13 @@ import T09IntegratedProof from '@/components/f2/T09IntegratedProof'
 import { GaMetricCard } from '@/components/ga/GaMetricCard'
 import { GaCard } from '@/components/ga/GaCard'
 
-const statusLabels: Record<string, string> = {
-  preservado_no_pipeline: 'Preservado no pipeline',
-  desconhecido_preservado: 'Desconhecido preservado',
-  duplicidade_no_lote: 'Duplicidade no lote',
-  conflito_no_lote: 'Conflito no lote',
-  chave_ausente: 'Chave ausente',
-  ausente_no_pipeline: 'Ausente no pipeline · criação prevista',
-  conflito_com_pipeline: 'Conflito com pipeline',
-}
+import {
+  MAPA_STATUS_T04,
+  MAPA_ACOES_T04,
+  formatarOrigem,
+  formatarCampanha,
+  formatarBooleano,
+} from '@/lib/formatters'
 
 const statusBadgeClass = (status: string) => {
   if (status.includes('conflito') || status.includes('ausente'))
@@ -60,61 +58,87 @@ function ReportTable({ report }: { report: T04Report }) {
       <table className="w-full min-w-[980px] text-left text-xs">
         <thead className="border-b border-[#dadce0] bg-[#f8f9fa] text-[11px] uppercase tracking-wider text-[#5f6368]">
           <tr>
-            <th className="px-4 py-3 font-semibold text-[#202124]">record_id</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">linhas da fonte</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">origem</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">campanha</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">destino</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">resultado</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">responsável</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Identificador</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Linhas de Origem</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Tipo de Origem</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Campanha</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">No Pipeline</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Resultado da Reconciliação</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Responsável</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#f1f3f4] text-[#202124]">
           {report.rows.map((row) => (
             <tr key={row.record_id} className="align-top hover:bg-[#f8f9fa] transition-colors">
               <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] font-semibold text-[#1a73e8]">
-                {row.record_id}
+                {row.record_id || 'Não informado'}
               </td>
-              <td className="px-4 py-3 text-[#5f6368] font-mono">{row.sourceRows.join(', ')}</td>
-              <td className="px-4 py-3 font-medium capitalize">{row.sourceOrigin}</td>
-              <td className="px-4 py-3 text-[#5f6368]">{row.sourceCampaign}</td>
+              <td className="px-4 py-3 text-[#5f6368] font-mono">
+                {row.sourceRows.length > 1
+                  ? `Linhas ${row.sourceRows.join(', ')}`
+                  : `Linha ${row.sourceRows[0] ?? '—'}`}
+              </td>
               <td className="px-4 py-3">
                 <span
-                  className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
+                  className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                    row.sourceOrigin === 'desconhecido'
+                      ? 'bg-[#fef7e0] text-[#b06000]'
+                      : row.sourceOrigin === 'inbound'
+                        ? 'bg-[#e8f0fe] text-[#1a73e8]'
+                        : 'bg-[#e6f4ea] text-[#137333]'
+                  }`}
+                >
+                  {formatarOrigem(row.sourceOrigin)}
+                </span>
+              </td>
+              <td className="px-4 py-3 font-medium text-[#202124]">
+                {formatarCampanha(row.sourceCampaign)}
+              </td>
+              <td className="px-4 py-3">
+                <span
+                  className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
                     row.targetPresent
                       ? 'bg-[#e6f4ea] text-[#137333]'
                       : 'bg-[#f1f3f4] text-[#5f6368]'
                   }`}
                 >
-                  {row.targetPresent ? 'sim' : 'não'}
+                  {formatarBooleano(row.targetPresent)}
                 </span>
               </td>
               <td className="px-4 py-3">
                 <span
-                  className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium ${statusBadgeClass(
+                  className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium ${statusBadgeClass(
                     row.status,
                   )}`}
                 >
-                  {statusLabels[row.status] || row.status}
+                  {MAPA_STATUS_T04[row.status] || row.status}
                 </span>
-                <p className="mt-1 max-w-[360px] text-[11px] text-[#5f6368]">{row.detail}</p>
+                <p className="mt-1 max-w-[360px] text-[11px] text-[#5f6368] leading-relaxed">
+                  {row.detail}
+                </p>
               </td>
               <td className="px-4 py-3 text-[11px] text-[#5f6368]">{row.owner}</td>
             </tr>
           ))}
           {report.invalidRows.map((row) => (
             <tr key={`invalid-${row.sourceRow}`} className="align-top bg-[#fef7e0]/40">
-              <td className="px-4 py-3 font-mono text-[11px] text-[#b06000]">(vazio)</td>
-              <td className="px-4 py-3 text-[#5f6368] font-mono">{row.sourceRow}</td>
-              <td className="px-4 py-3 text-[#5f6368]">sem origem</td>
-              <td className="px-4 py-3 text-[#5f6368]">sem campanha</td>
-              <td className="px-4 py-3 text-[#5f6368]">não</td>
+              <td className="px-4 py-3 font-mono text-[11px] text-[#b06000] italic">
+                Identificador ausente
+              </td>
+              <td className="px-4 py-3 text-[#5f6368] font-mono">Linha {row.sourceRow}</td>
+              <td className="px-4 py-3 text-[#5f6368]">Não identificada</td>
+              <td className="px-4 py-3 text-[#5f6368]">Sem campanha</td>
               <td className="px-4 py-3">
-                <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#fef7e0] text-[#b06000]">
-                  Chave ausente
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#f1f3f4] text-[#5f6368]">
+                  Não
+                </span>
+              </td>
+              <td className="px-4 py-3">
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#fef7e0] text-[#b06000]">
+                  Identificador ausente
                 </span>
                 <p className="mt-1 text-[11px] text-[#5f6368]">
-                  Bloqueado no dry-run; nenhuma inferência ou criação.
+                  Bloqueado no teste; nenhuma inferência ou criação realizada.
                 </p>
               </td>
               <td className="px-4 py-3 text-[11px] text-[#5f6368]">
@@ -134,9 +158,9 @@ function ActionTable({ actions }: { actions: T04Action[] }) {
       <table className="w-full min-w-[700px] text-left text-xs">
         <thead className="border-b border-[#dadce0] bg-[#f8f9fa] text-[11px] uppercase tracking-wider text-[#5f6368]">
           <tr>
-            <th className="px-4 py-3 font-semibold text-[#202124]">ação planejada</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">record_id</th>
-            <th className="px-4 py-3 font-semibold text-[#202124]">motivo técnico</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Ação Planejada</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Identificador</th>
+            <th className="px-4 py-3 font-semibold text-[#202124]">Motivo Técnico</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#f1f3f4] text-[#202124]">
@@ -155,11 +179,11 @@ function ActionTable({ actions }: { actions: T04Action[] }) {
                         : 'bg-[#f1f3f4] text-[#5f6368]'
                   }`}
                 >
-                  {action.kind}
+                  {MAPA_ACOES_T04[action.kind] || action.kind}
                 </span>
               </td>
               <td className="px-4 py-3 font-mono text-[11px] font-semibold text-[#202124]">
-                {action.source.record_id || '(vazio)'}
+                {action.source.record_id || 'Sem identificador'}
               </td>
               <td className="px-4 py-3 text-[11px] text-[#5f6368]">{action.detail}</td>
             </tr>

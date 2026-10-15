@@ -49,6 +49,13 @@ import {
 import { DecisaoMarketingSection } from '@/components/f2/DecisaoMarketingSection'
 import { GaMetricCard } from '@/components/ga/GaMetricCard'
 import { GaCard } from '@/components/ga/GaCard'
+import {
+  formatarDataAmigavel,
+  formatarValorMonetario,
+  formatarOrigem,
+  formatarCanal,
+  MAPA_ESTADOS_BRIEFING,
+} from '@/lib/formatters'
 
 const USUARIO_SINTETICO = {
   email: 'humano-sintetico-aprovador-01@f2.invalid',
@@ -392,13 +399,13 @@ export function ExperimentosF2Page() {
               </div>
 
               <div className="flex flex-wrap gap-1.5 mb-3">
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#202124] font-medium">
-                  {item.origin}
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#f1f3f4] text-[#202124] font-medium">
+                  {formatarOrigem(item.origin)}
                 </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
-                  {item.channel}
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
+                  {formatarCanal(item.channel)}
                 </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#f1f3f4] text-[#5f6368]">
                   {item.service}
                 </span>
               </div>
@@ -859,10 +866,10 @@ export function ExperimentoF2DetailPage() {
               <TextoOuVazio valor={item.service} />
             </Linha>
             <Linha titulo="Origem">
-              <TextoOuVazio valor={item.origin} />
+              <TextoOuVazio valor={formatarOrigem(item.origin)} />
             </Linha>
             <Linha titulo="Canal">
-              <TextoOuVazio valor={item.channel} />
+              <TextoOuVazio valor={formatarCanal(item.channel)} />
             </Linha>
           </div>
 

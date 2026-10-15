@@ -20,23 +20,13 @@ import { simulateT05Checks } from '@/lib/f2/t05/rules'
 import type { DecisaoF2 } from '@/lib/f2/t05/types'
 import { GaMetricCard } from '@/components/ga/GaMetricCard'
 import { GaCard } from '@/components/ga/GaCard'
+import { MAPA_STATUS_DECISAO, MAPA_DECISOES, formatarDataAmigavel } from '@/lib/formatters'
 
-const statusLabels: Record<string, string> = {
-  pendente: 'Pendente de decisão',
-  registrada: 'Registrada',
-  revogada: 'Revogada',
-}
-
-const decisionLabels: Record<string, string> = {
-  continuar: 'Continuar',
-  ajustar: 'Ajustar',
-  interromper: 'Interromper',
-}
+const statusLabels: Record<string, string> = MAPA_STATUS_DECISAO
+const decisionLabels: Record<string, string> = MAPA_DECISOES
 
 function formatDate(value?: string) {
-  if (!value) return '—'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('pt-BR')
+  return formatarDataAmigavel(value)
 }
 
 function isOverdue(item: DecisaoF2) {

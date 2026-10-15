@@ -26,6 +26,18 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
 import { GaMetricCard } from '@/components/ga/GaMetricCard'
 import { GaCard } from '@/components/ga/GaCard'
+import {
+  MAPA_ESTADOS_DEMANDA,
+  MAPA_ORIGENS,
+  MAPA_CANAIS,
+  formatarDataAmigavel,
+  formatarBooleano,
+  formatarNumero,
+  formatarValorMonetario,
+  formatarCanal,
+  formatarOrigem,
+  formatarCampanha,
+} from '@/lib/formatters'
 
 type Demanda = {
   id: string
@@ -89,28 +101,14 @@ const emptyFilters: Filters = {
   data_fim: '',
 }
 
-const labels: Record<string, string> = {
-  suspect: 'Suspect',
-  prospect: 'Prospect',
-  lead_qualificado: 'Lead qualificado',
-  oportunidade: 'Oportunidade',
-  proposta: 'Proposta',
-  vaga_aberta: 'Vaga aberta',
-  ganho: 'Ganho',
-  perdido: 'Perdido',
-  sem_timing: 'Sem timing',
-  desqualificado: 'Desqualificado',
-}
+const labels: Record<string, string> = MAPA_ESTADOS_DEMANDA
 
 function displayValue(value: string) {
-  return value || 'Não informado'
+  return value?.trim() ? value : 'Não informado'
 }
 
 function formatDate(value: string) {
-  if (!value) return '—'
-  const datePart = value.slice(0, 10)
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart)
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : value
+  return formatarDataAmigavel(value)
 }
 
 function uniqueValues(records: Demanda[], field: keyof Demanda) {
@@ -833,14 +831,14 @@ export default function Index() {
                   <td className="px-4 py-3 font-medium text-[#202124]">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[11px] text-[#1a73e8] font-semibold">
-                        {c.name}
+                        {formatarCampanha(c.name)}
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[#5f6368] capitalize">{c.canal}</td>
+                  <td className="px-4 py-3 text-[#5f6368]">{formatarCanal(c.canal)}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium capitalize ${
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
                         c.tipo_origem === 'desconhecido'
                           ? 'bg-[#fef7e0] text-[#b06000]'
                           : c.tipo_origem === 'inbound'
@@ -848,24 +846,26 @@ export default function Index() {
                             : 'bg-[#e6f4ea] text-[#137333]'
                       }`}
                     >
-                      {c.tipo_origem}
+                      {formatarOrigem(c.tipo_origem)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-mono font-medium text-[#202124]">
-                    {c.total}
+                    {formatarNumero(c.total)}
                   </td>
                   <td className="px-4 py-3 text-right font-mono font-semibold text-[#137333]">
-                    {c.qualificados}
+                    {formatarNumero(c.qualificados)}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-[#1a73e8]">
-                    {c.oportunidades}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono text-[#5f6368]">{c.propostas}</td>
-                  <td className="px-4 py-3 text-right font-mono font-bold text-[#137333]">
-                    {c.ganhos}
+                    {formatarNumero(c.oportunidades)}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-[#5f6368]">
-                    {c.icpValidados}
+                    {formatarNumero(c.propostas)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono font-bold text-[#137333]">
+                    {formatarNumero(c.ganhos)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-[#5f6368]">
+                    {formatarNumero(c.icpValidados)}
                   </td>
                 </tr>
               ))}
@@ -904,7 +904,9 @@ export default function Index() {
                 >
                   <div className="flex items-center gap-2">
                     <div className="h-2.5 w-2.5 rounded-full bg-[#1a73e8]" />
-                    <span className="text-xs font-medium text-[#202124] capitalize">{c.canal}</span>
+                    <span className="text-xs font-medium text-[#202124]">
+                      {formatarCanal(c.canal)}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -912,7 +914,7 @@ export default function Index() {
                       <div className="h-full bg-[#1a73e8]" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-xs text-[#5f6368] font-mono w-8 text-right">{pct}%</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f8f9fa] text-[#202124] font-mono">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#f8f9fa] text-[#202124] font-mono">
                       {c.total} leads ({c.qualificados} qualif.)
                     </span>
                   </div>
@@ -1017,7 +1019,7 @@ export default function Index() {
                 tableFilteredRecords.map((record) => (
                   <tr key={record.id} className="hover:bg-[#f8f9fa] transition-colors">
                     <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[11px] text-[#1a73e8] font-medium">
-                      {record.record_id}
+                      {record.record_id || 'Não informado'}
                     </td>
                     <td className="px-4 py-2.5 font-medium text-[#202124]">
                       {displayValue(record.empresa)}
@@ -1026,15 +1028,13 @@ export default function Index() {
                       {record.campanha ? (
                         <span className="font-semibold text-[#1a73e8]">{record.campanha}</span>
                       ) : (
-                        <span className="text-[#5f6368]">—</span>
+                        <span className="text-[#5f6368]">Orgânico</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-[#5f6368] capitalize">
-                      {displayValue(record.canal)}
-                    </td>
+                    <td className="px-4 py-2.5 text-[#5f6368]">{formatarCanal(record.canal)}</td>
                     <td className="px-4 py-2.5">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium capitalize ${
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
                           record.tipo_origem === 'desconhecido'
                             ? 'bg-[#fef7e0] text-[#b06000]'
                             : record.tipo_origem === 'inbound'
@@ -1042,9 +1042,7 @@ export default function Index() {
                               : 'bg-[#e6f4ea] text-[#137333]'
                         }`}
                       >
-                        {record.tipo_origem === 'desconhecido'
-                          ? 'Desconhecido'
-                          : displayValue(record.tipo_origem)}
+                        {formatarOrigem(record.tipo_origem)}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-[#5f6368]">
@@ -1055,12 +1053,12 @@ export default function Index() {
                     </td>
                     <td className="px-4 py-2.5">
                       {record.icp_validado === 'sim' ? (
-                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-[#e6f4ea] text-[#137333]">
-                          sim
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#e6f4ea] text-[#137333]">
+                          Sim
                         </span>
                       ) : record.icp_validado === 'nao' ? (
-                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-[#fce8e6] text-[#c5221f]">
-                          não
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#fce8e6] text-[#c5221f]">
+                          Não
                         </span>
                       ) : (
                         <span className="text-[#5f6368] text-[11px]">—</span>

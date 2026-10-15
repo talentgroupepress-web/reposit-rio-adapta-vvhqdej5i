@@ -15,17 +15,11 @@ import {
 import { validateDecisionInput } from '@/lib/f2/t05/rules'
 import type { DecisaoF2, DecisionInput } from '@/lib/f2/t05/types'
 
-const decisionLabels: Record<string, string> = {
-  continuar: 'Continuar',
-  ajustar: 'Ajustar',
-  interromper: 'Interromper',
-}
+import { MAPA_DECISOES, MAPA_STATUS_DECISAO, formatarDataAmigavel } from '@/lib/formatters'
 
-const statusLabels: Record<string, string> = {
-  pendente: 'Pendente de decisão',
-  registrada: 'Registrada',
-  revogada: 'Revogada',
-}
+const decisionLabels: Record<string, string> = MAPA_DECISOES
+
+const statusLabels: Record<string, string> = MAPA_STATUS_DECISAO
 
 const statusClass: Record<string, string> = {
   pendente: 'border-amber-300 bg-amber-50 text-amber-900',
@@ -34,9 +28,7 @@ const statusClass: Record<string, string> = {
 }
 
 function formatDate(value?: string) {
-  if (!value) return '—'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('pt-BR')
+  return formatarDataAmigavel(value)
 }
 
 function DecisionForm({
